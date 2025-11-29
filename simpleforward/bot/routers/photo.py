@@ -1,25 +1,28 @@
 import asyncio
 from asyncio import CancelledError
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from aiogram import Bot, F, Router
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.types import InputMediaPhoto, InputMediaVideo, Message
 
 from simpleforward.bot.message_manager import MessageManager
-from simpleforward.config import models
+from simpleforward.config import Config
+from simpleforward.moderation import AsyncModerator
 
 
 class PhotoRouter(Router):
     def __init__(self,
-                 forwarding_config: models.Forwarding,
-                 message_manager: MessageManager):
+                 config: Config,
+                 message_manager: MessageManager,
+                 moderator: Optional[AsyncModerator] = None):
         super().__init__()
 
-        self.config = forwarding_config
+        self.config = config
         self.message_manager = message_manager
+        self.moderator = moderator
 
-        self.media_groups: Dict[int, dict] = {}
+        self.media_groups: Dict[int, List[str]] = {}
         self.media_groups_tasks: Dict[int, asyncio.Task] = {}
         self.media_groups_lock = asyncio.Lock()
 
@@ -28,29 +31,26 @@ class PhotoRouter(Router):
     def _register_handlers(self):
         @self.message(F.photo | F.video)
         async def on_photo(message: Message, bot: Bot):
-            if "photo" not in self.config.types and "video" not in self.config.types:
+            if "photo" not in self.config.forwarding.types and "video" not in self.config.forwarding.types:
                 return
 
             def can_send_media(msgs: List[Message]):
                 photos = len([msg for msg in msgs if msg.photo])
                 videos = len([msg for msg in msgs if msg.video])
 
-                if (photos and "photo" in self.config.types) or (videos and "video" in self.config.types):
-                    return True
-                else:
-                    return False
+                return (photos and "photo" in self.config.forwarding.types) or (videos and "video" in self.config.forwarding.types)
 
             def get_media(msg: Message):
-                caption = self.config.message_template.format(text=msg.caption) if msg.caption else None
+                caption = self.config.forwarding.message_template.format(text=msg.caption) if msg.caption else None
                 parse_mode = "HTML" if msg.caption else None
 
-                if msg.photo and "photo" in self.config.types:
+                if msg.photo and "photo" in self.config.forwarding.types:
                     return InputMediaPhoto(
                         media=msg.photo[-1].file_id,
                         caption=caption,
                         parse_mode=parse_mode
                     )
-                elif msg.video and "video" in self.config.types:
+                elif msg.video and "video" in self.config.forwarding.types:
                     return InputMediaVideo(
                         media=msg.video.file_id,
                         caption=caption,
@@ -66,7 +66,7 @@ class PhotoRouter(Router):
                     if can_send_media(messages):
                         if len(messages) > 1:
                             group_message_id = (await bot.send_media_group(
-                                self.config.target_chat_id,
+                                self.config.forwarding.target_chat_id,
                                 [
                                     get_media(msg)
                                     for msg in messages
@@ -79,9 +79,9 @@ class PhotoRouter(Router):
                             file_id = msg.photo[-1].file_id if msg.photo else msg.video.file_id
 
                             group_message_id = (await func(
-                                self.config.target_chat_id,
+                                self.config.forwarding.target_chat_id,
                                 file_id,
-                                caption=self.config.message_template.format(text=msg.caption or ""),
+                                caption=self.config.forwarding.message_template.format(text=msg.caption or ""),
                                 parse_mode="HTML"
                             )).message_id
 
