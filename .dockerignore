@@ -1,0 +1,19 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[codz]
+*$py.class
+
+# Config
+config.yml
+config.yml.example
+
+# Git
+.git
+.gitignore
+
+# Python venv
+.venv
+
+# Repo trash
+LICENSE
+README.md
