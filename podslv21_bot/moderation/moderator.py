@@ -7,7 +7,7 @@ from typing import Dict, List
 from openai import AsyncOpenAI, APIResponseValidationError
 
 from .rule_manager import RuleManager
-from simpleforward.config import Config
+from podslv21_bot.config import Config
 
 
 class AsyncModerator:

@@ -3,9 +3,9 @@ import logging
 
 from aiogram import Bot, Dispatcher
 
-from simpleforward.bot import MessageManager, build
-from simpleforward.config import Config
-from simpleforward.moderation import AsyncModerator, RuleManager
+from podslv21_bot.bot import MessageManager, build
+from podslv21_bot.config import Config
+from podslv21_bot.moderation import AsyncModerator, RuleManager
 
 from . import paths
 

@@ -5,9 +5,9 @@ from aiogram.enums import ChatType
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.types import Message
 
-from simpleforward.bot.message_manager import MessageManager
-from simpleforward.config import Config
-from simpleforward.moderation import AsyncModerator
+from podslv21_bot.bot.message_manager import MessageManager
+from podslv21_bot.config import Config
+from podslv21_bot.moderation import AsyncModerator
 
 
 class TextRouter(Router):

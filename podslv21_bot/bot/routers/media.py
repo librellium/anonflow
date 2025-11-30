@@ -6,9 +6,9 @@ from aiogram import Bot, F, Router
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.types import InputMediaPhoto, InputMediaVideo, Message
 
-from simpleforward.bot.message_manager import MessageManager
-from simpleforward.config import Config
-from simpleforward.moderation import AsyncModerator
+from podslv21_bot.bot.message_manager import MessageManager
+from podslv21_bot.config import Config
+from podslv21_bot.moderation import AsyncModerator
 
 
 class MediaRouter(Router):

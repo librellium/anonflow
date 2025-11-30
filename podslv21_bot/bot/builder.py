@@ -2,8 +2,8 @@ from typing import Optional
 
 from aiogram import Router
 
-from simpleforward.config import Config
-from simpleforward.moderation import AsyncModerator
+from podslv21_bot.config import Config
+from podslv21_bot.moderation import AsyncModerator
 
 from .message_manager import MessageManager
 from .routers.media import MediaRouter
