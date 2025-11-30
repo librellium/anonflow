@@ -3,6 +3,7 @@ from asyncio import CancelledError
 from typing import Dict, List, Optional
 
 from aiogram import Bot, F, Router
+from aiogram.enums import ChatType
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.types import InputMediaPhoto, InputMediaVideo, Message
 
@@ -31,7 +32,9 @@ class MediaRouter(Router):
     def _register_handlers(self):
         @self.message(F.photo | F.video)
         async def on_photo(message: Message, bot: Bot):
-            if "photo" not in self.config.forwarding.types and "video" not in self.config.forwarding.types:
+            if ("photo" not in self.config.forwarding.types\
+                and "video" not in self.config.forwarding.types)\
+                    or message.chat.type != ChatType.PRIVATE:
                 return
 
             def can_send_media(msgs: List[Message]):
