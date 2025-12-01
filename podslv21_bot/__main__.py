@@ -5,7 +5,9 @@ from aiogram import Bot, Dispatcher
 
 from podslv21_bot.bot import MessageManager, build
 from podslv21_bot.config import Config
-from podslv21_bot.moderation import AsyncModerator, RuleManager
+from podslv21_bot.moderation import (ModerationExecutor,
+                                     ModerationPlanner,
+                                     RuleManager)
 
 from . import paths
 
@@ -25,13 +27,15 @@ async def main():
 
     message_manager = MessageManager()
 
-    moderator = None
+    executor = None
     if config.moderation.enabled:
         rule_manager = RuleManager(paths.RULES_DIR)
-        moderator = AsyncModerator(config, rule_manager)
+        rule_manager.reload()
+        planner = ModerationPlanner(config, rule_manager)
+        executor = ModerationExecutor(config, bot, planner)
 
     dispatcher.include_router(
-        build(config, message_manager, moderator)
+        build(config, message_manager, executor)
     )
 
     await dispatcher.start_polling(bot)
