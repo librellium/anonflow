@@ -3,7 +3,7 @@ from typing import List, Literal, Optional, TypeAlias
 from pydantic import BaseModel, SecretStr
 
 ForwardingType: TypeAlias = Literal["text", "photo", "video"]
-ModerationType: TypeAlias = Literal["links", "omni", "gpt"]
+ModerationType: TypeAlias = Literal["gpt"]
 LoggingLevel: TypeAlias = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
 class Bot(BaseModel):
@@ -24,7 +24,7 @@ class OpenAI(BaseModel):
 class Moderation(BaseModel):
     enabled: bool = True
     model: str = "gpt-5-mini"
-    types: List[ModerationType] = ["links", "omni", "gpt"]
+    types: List[ModerationType] = ["gpt"]
 
 class Logging(BaseModel):
     level: LoggingLevel = "INFO"
