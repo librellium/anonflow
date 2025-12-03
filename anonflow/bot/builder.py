@@ -2,8 +2,8 @@ from typing import Optional
 
 from aiogram import Router
 
-from podslv21_bot.config import Config
-from podslv21_bot.moderation import ModerationExecutor
+from anonflow.config import Config
+from anonflow.moderation import ModerationExecutor
 
 from .routers import MediaRouter, StartRouter, TextRouter
 from .utils import MessageManager, TemplateRenderer

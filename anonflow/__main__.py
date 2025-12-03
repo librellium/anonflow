@@ -3,13 +3,13 @@ import logging
 
 from aiogram import Bot, Dispatcher
 
-from podslv21_bot import __version_str__
-from podslv21_bot.bot import (GlobalSlowmodeMiddleware,
+from anonflow import __version_str__
+from anonflow.bot import (GlobalSlowmodeMiddleware,
                               MessageManager,
                               TemplateRenderer,
                               build)
-from podslv21_bot.config import Config
-from podslv21_bot.moderation import (ModerationExecutor,
+from anonflow.config import Config
+from anonflow.moderation import (ModerationExecutor,
                                      ModerationPlanner,
                                      RuleManager)
 

@@ -6,7 +6,7 @@ from typing import Dict, List, Union
 
 from openai import APIResponseValidationError, AsyncOpenAI
 
-from podslv21_bot.config import Config
+from anonflow.config import Config
 
 from .rule_manager import RuleManager
 

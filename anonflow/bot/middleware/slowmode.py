@@ -3,7 +3,7 @@ import asyncio
 from aiogram import BaseMiddleware
 from aiogram.types import Message
 
-from podslv21_bot.bot.utils.template_renderer import TemplateRenderer
+from anonflow.bot.utils.template_renderer import TemplateRenderer
 
 
 class GlobalSlowmodeMiddleware(BaseMiddleware):

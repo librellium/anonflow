@@ -5,7 +5,7 @@ from aiogram import Bot
 from aiogram.exceptions import TelegramBadRequest
 from yarl import URL
 
-from podslv21_bot.config import Config
+from anonflow.config import Config
 
 from .models import ModerationDecision, ModerationEvent
 from .planner import ModerationPlanner

@@ -5,10 +5,10 @@ from aiogram.enums import ChatType
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.types import Message
 
-from podslv21_bot.bot.utils.message_manager import MessageManager
-from podslv21_bot.bot.utils.template_renderer import TemplateRenderer
-from podslv21_bot.config import Config
-from podslv21_bot.moderation import ModerationExecutor
+from anonflow.bot.utils.message_manager import MessageManager
+from anonflow.bot.utils.template_renderer import TemplateRenderer
+from anonflow.config import Config
+from anonflow.moderation import ModerationExecutor
 
 
 class TextRouter(Router):
