@@ -1,4 +1,5 @@
 from .builder import build
-from .message_manager import MessageManager
+from .middleware import GlobalSlowmodeMiddleware
+from .utils import MessageManager, TemplateRenderer
 
-__all__ = ["build", "MessageManager"]
+__all__ = ["build", "MessageManager", "GlobalSlowmodeMiddleware", "TemplateRenderer"]
