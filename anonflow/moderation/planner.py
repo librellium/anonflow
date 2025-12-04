@@ -43,72 +43,81 @@ class ModerationPlanner:
                 "description": func.__doc__ or ""
             })
 
-        self._logger.info(f"Functions added: {', '.join(self.get_function_names())}. Total={len(self._functions)}")
+        function_names = self.get_function_names()
+
+        if "moderation_decision" not in function_names:
+            self._logger.warning("Critical function 'moderation_decision' not found. Running the bot in this mode is NOT recommended!")
+
+        self._logger.info(f"Functions added: {', '.join(function_names)}. Total={len(self._functions)}")
 
     def get_function_names(self) -> Union[List[str], None]:
         return [f.get("name") for f in self._functions]
 
     async def plan(self, message_text: str) -> List[Dict[str, Union[list, str]]]:
-        mod_response = await self._client.moderations.create(
-            model="omni-moderation-latest",
-            input=[
-                {
-                    "type": "text",
-                    "text": message_text
-                }
-            ]
-        )
-
-        funcs = self._functions
-        funcs_prompt = "\n".join(
-            f"- {func['name']}({', '.join(f'{arg}: {ann}' for arg, ann in (func.get('args') or {}).items())})"
-            f" - {func.get('description', '')}"
-            for func in funcs
-        )
-
-        retry = 0
-        result = None
-
-        while retry <= self._client.max_retries:
-            response = await self._client.responses.create(
-                model=self.config.moderation.model,
+        if "omni" in self.config.moderation.types:
+            moderation = await self._client.moderations.create(
+                model="omni-moderation-latest",
                 input=[
                     {
-                        "role": "system",
-                        "content": "Ответь строго JSON-массивом вида:\n"
-                                   '`[{"name": ..., "args": [...]}, ...]`\n'
-                                   "`name` - название функции, `args` - последовательность аргументов.\n"
-                                   "Выведи только подходящий JSON, выбирай функции в "
-                                   "соответствии с запросом пользователя и описанием функции "
-                                   "Ты в праве вызывать несколько функций, указывая их по порядку в выводе.\n\n"
-                                   "**ВАЖНО:**\n"
-                                   "- Каждая функция должна содержать **все и только обязательные аргументы**, указанные в её описании.\n"
-                                   "- Не придумывай дополнительных аргументов.\n"
-                                   "- Не пропускай обязательные аргументы.\n"
-                                   "- `args` должны быть в том порядке, который указан в описании функции.\n\n"
-                                   "Доступные функции:\n"
-                                   f"{funcs_prompt}"
-                    },
-                    *[{"role": "system", "content": rule} for rule in self.rule_manager.get_rules()],
-                    {
-                        "role": "user",
-                        "content": message_text
+                        "type": "text",
+                        "text": message_text
                     }
                 ]
             )
 
-            try:
-                text = response.output_text
+            if moderation.results[0].flagged:
+                return [{"name": "moderation_decision", "args": ["REJECT", "Сообщение заблокировано автомодератором"]}]
 
-                start = text.index("[")
-                end = text.rindex("]") + 1
+        if "gpt" in self.config.moderation.types:
+            funcs = self._functions
+            funcs_prompt = "\n".join(
+                f"- {func['name']}({', '.join(f'{arg}: {ann}' for arg, ann in (func.get('args') or {}).items())})"
+                f" - {func.get('description', '')}"
+                for func in funcs
+            )
 
-                result = json.loads(text[start:end])
-                break
-            except JSONDecodeError:
-                retry += 1
+            retry = 0
+            result = None
 
-        if not result:
-            raise APIResponseValidationError()
+            while retry <= self._client.max_retries:
+                response = await self._client.responses.create(
+                    model=self.config.moderation.model,
+                    input=[
+                        {
+                            "role": "system",
+                            "content": "Respond strictly with a JSON array in the following format:\n"
+                                    "`[{\"name\": ..., \"args\": [...]} , ...]`\n"
+                                    "`name` - the function name, `args` - an ordered list of arguments.\n"
+                                    "Output only a valid JSON. Choose functions based on the user's request and the function descriptions.\n"
+                                    "You are allowed to call multiple functions, listing them in order in the output.\n\n"
+                                    "**IMPORTANT:**\n"
+                                    "- Each function must include **all and only the required arguments** specified in its description.\n"
+                                    "- Do not invent additional arguments.\n"
+                                    "- Do not omit required arguments.\n"
+                                    "- `args` must be in the order specified in the function description.\n\n"
+                                    "Available functions:\n"
+                                    f"{funcs_prompt}"
+                        },
+                        *[{"role": "system", "content": rule} for rule in self.rule_manager.get_rules()],
+                        {
+                            "role": "user",
+                            "content": message_text
+                        }
+                    ]
+                )
 
-        return result
+                try:
+                    text = response.output_text
+
+                    start = text.index("[")
+                    end = text.rindex("]") + 1
+
+                    result = json.loads(text[start:end])
+                    break
+                except JSONDecodeError:
+                    retry += 1
+
+            if not result:
+                raise APIResponseValidationError()
+
+            return result
