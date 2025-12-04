@@ -40,11 +40,11 @@ class TextRouter(Router):
                         try:
                             await bot.send_message(chat_id, message.text, reply_to_message_id=reply_to_message_id)
                             await message.answer(
-                                await self.renderer.render("messages/send/success.j2", message)
+                                await self.renderer.render("messages/users/send/success.j2", message=message)
                             )
                         except (TelegramBadRequest, TelegramForbiddenError) as e:
                             await message.answer(
-                                await self.renderer.render("messages/send/error.j2", message)
+                                await self.renderer.render("messages/users/send/failure.j2", message=message, exception=e)
                             )
             elif message.chat.type == ChatType.PRIVATE and "text" in self.config.forwarding.types:
                 try:
@@ -56,15 +56,15 @@ class TextRouter(Router):
                     moderation_passed = False
                     if self.config.moderation.enabled:
                         sent_message = await message.answer(
-                            await self.renderer.render("messages/moderation/pending.j2", message)
+                            await self.renderer.render("messages/users/moderation/pending.j2", message=message)
                         )
                         async for event in self.executor.process_message(message.text):
                             if event.type == "moderation_decision":
-                                if event.result.status == "PASS":
+                                if event.result.status == "APPROVE":
                                     moderation_passed = True
                                 elif event.result.status == "REJECT":
                                     await message.answer(
-                                        await self.renderer.render("messages/moderation/rejected.j2", message)
+                                        await self.renderer.render("messages/users/moderation/rejected.j2", message=message)
                                     )
 
                         await sent_message.delete()
@@ -78,7 +78,7 @@ class TextRouter(Router):
                         reply_to_message_id = message.message_id
                         msg = await bot.send_message(
                             target,
-                            self.config.forwarding.message_template.format(text=message.text),
+                            await self.renderer.render("messages/channel/text.j2", message=message),
                             parse_mode="HTML"
                         )
 
@@ -88,9 +88,9 @@ class TextRouter(Router):
                     self.message_manager.add(reply_to_message_id, group_message_id, message.chat.id)
                     if moderation_passed:
                         await message.answer(
-                            await self.renderer.render("messages/send/success.j2", message)
+                            await self.renderer.render("messages/users/send/success.j2", message=message)
                         )
                 except (TelegramBadRequest, TelegramForbiddenError) as e:
                     await message.answer(
-                        await self.renderer.render("messages/send/error.j2", message)
+                        await self.renderer.render("messages/users/send/failure.j2", message=message, exception=e)
                     )
