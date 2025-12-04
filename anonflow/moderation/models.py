@@ -8,5 +8,5 @@ class ModerationEvent(BaseModel):
     result: Any
 
 class ModerationDecision(BaseModel):
-    status: Literal["PASS", "REJECT"]
+    status: Literal["APPROVE", "REJECT"]
     explanation: str
