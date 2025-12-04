@@ -33,20 +33,31 @@ async def main():
     dispatcher = Dispatcher()
 
     message_manager = MessageManager()
-    renderer = TemplateRenderer(paths.TEMPLATES_DIR)
+    renderer = TemplateRenderer(templates_dir=paths.TEMPLATES_DIR)
 
     executor = None
     if config.moderation.enabled:
-        rule_manager = RuleManager(paths.RULES_DIR)
+        rule_manager = RuleManager(rules_dir=paths.RULES_DIR)
         rule_manager.reload()
 
-        planner = ModerationPlanner(config, rule_manager)
-        executor = ModerationExecutor(config, bot, planner)
+        planner = ModerationPlanner(
+            config=config,
+            rule_manager=rule_manager
+        )
+        executor = ModerationExecutor(
+            config=config,
+            bot=bot,
+            template_renderer=renderer,
+            planner=planner
+        )
 
     dispatcher.update.middleware(
-        GlobalSlowmodeMiddleware(delay=5, template_renderer=renderer)
+        GlobalSlowmodeMiddleware(
+            delay=5,
+            template_renderer=renderer
+        )
     )
-    
+
     dispatcher.include_router(
         build(
             config=config,
