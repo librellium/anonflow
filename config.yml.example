@@ -1,16 +1,24 @@
 bot:
   token: null
-  timeout: 10
+  timeout: 15
+behavior:
+  slowmode:
+    enabled: true
+    mode: user
+    delay: 120
+  subscription_requirement:
+    enabled: false
+    channel_ids: null
 forwarding:
-  moderation_chat_id: null
-  publication_chat_id: null
+  moderation_chat_ids: null
+  publication_channel_ids: null
   types:
   - text
   - photo
   - video
 openai:
   api_key: null
-  timeout: 10
+  timeout: 60
   max_retries: 0
 moderation:
   enabled: true
