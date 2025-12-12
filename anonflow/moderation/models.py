@@ -1,12 +1,24 @@
-from typing import Any, Literal
+from dataclasses import dataclass
+from typing import Union
 
-from pydantic import BaseModel
+from aiogram.types import ChatIdUnion
 
 
-class ModerationEvent(BaseModel):
-    type: str
-    result: Any
+@dataclass
+class ExecutorDeletionEvent:
+    success: bool
+    message_id: ChatIdUnion
 
-class ModerationDecision(BaseModel):
-    status: Literal["APPROVE", "REJECT"]
+
+@dataclass
+class ModerationDecisionEvent:
+    approved: bool
     explanation: str
+
+
+@dataclass
+class ModerationStartedEvent:
+    pass
+
+
+Events = Union[ExecutorDeletionEvent, ModerationDecisionEvent, ModerationStartedEvent]
