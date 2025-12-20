@@ -1,0 +1,91 @@
+# Russian translations for anonflow.
+# Copyright (C) 2025 Librellium
+# This file is distributed under the same license as the anonflow project.
+# Librellium 246878136+librellium@users.noreply.github.com, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version:  0.2.4\n"
+"Report-Msgid-Bugs-To: 246878136+librellium@users.noreply.github.com\n"
+"POT-Creation-Date: 2025-12-14 14:04+0500\n"
+"PO-Revision-Date: 2025-12-14 14:11+0500\n"
+"Last-Translator: Librellium 246878136+librellium@users.noreply.github.com\n"
+"Language: ru\n"
+"Language-Team: Russian <LL@li.org>\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: anonflow/bot/middleware/global_slowmode.py:38
+#: anonflow/bot/middleware/user_slowmode.py:45
+msgid "messages.user.send_busy"
+msgstr "Вы уже недавно отправляли сообщение! Пожалуйста, подождите {remaining} секунд перед следующей попыткой."
+
+#: anonflow/bot/middleware/subscription.py:29
+msgid "messages.user.subscription_required"
+msgstr "Вам нужно быть участником канала, чтобы отправлять сообщения!"
+
+#: anonflow/bot/routers/info.py:20
+msgid "messages.command.info"
+msgstr ""
+"Версия: {bot_version}\n"
+"Имя бота: {bot_username}"
+
+#: anonflow/bot/routers/media.py:59 anonflow/bot/routers/media.py:135
+msgid "messages.channel.media"
+msgstr ""
+"<b>Сообщение из предложки</b>\n\n"
+"<blockquote>{text}</blockquote>"
+
+#: anonflow/bot/routers/media.py:148 anonflow/bot/routers/text.py:66
+#: anonflow/bot/routers/text.py:109
+msgid "messages.user.send_failure"
+msgstr "Извините, но произошла ошибка. Не удалось отправить сообщение: {exception}"
+
+#: anonflow/bot/routers/start.py:20
+msgid "messages.command.start"
+msgstr ""
+"Привет {username}!\n"
+"Ты можешь отправить мне сообщение, и я передам его в прикрепленный канал, не раскрывая твою личность."
+
+#: anonflow/bot/routers/text.py:62 anonflow/bot/utils/event_handler.py:64
+msgid "messages.user.send_success"
+msgstr "Сообщение успешно отправлено!"
+
+#: anonflow/bot/routers/text.py:97
+msgid "messages.channel.text"
+msgstr ""
+"<b>Сообщение из предложки</b>\n\n"
+"<blockquote>{text}</blockquote>"
+
+#: anonflow/bot/utils/event_handler.py:33
+msgid "messages.user.moderation_pending"
+msgstr "Сообщение отправлено на модерацию, ожидайте..."
+
+#: anonflow/bot/utils/event_handler.py:43
+msgid "messages.staff.moderation_approved"
+msgstr ""
+"Сообщение ниже было отправлено.\n"
+"Объяснение: {explanation}"
+
+#: anonflow/bot/utils/event_handler.py:52
+msgid "messages.staff.moderation_rejected"
+msgstr ""
+"Сообщение ниже было отклонено.\n"
+"Объяснение: {explanation}"
+
+#: anonflow/bot/utils/event_handler.py:66
+msgid "messages.user.moderation_rejected"
+msgstr "Извините, но сообщение не прошло модерацию."
+
+#: anonflow/bot/utils/event_handler.py:73
+msgid "messages.staff.deletion_success"
+msgstr "Удаление успешно для {message_id}."
+
+#: anonflow/bot/utils/event_handler.py:82
+msgid "messages.staff.deletion_failure"
+msgstr "Удаление окончилось ошибкой для {message_id}."
+
