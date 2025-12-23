@@ -4,19 +4,21 @@ from aiogram import BaseMiddleware
 from aiogram.enums import ChatMemberStatus
 from aiogram.types import ChatIdUnion, Message
 
-from anonflow.bot.utils.template_renderer import TemplateRenderer
+from anonflow.translator import Translator
 
 from .utils import extract_message
 
 
 class SubscriptionMiddleware(BaseMiddleware):
-    def __init__(self, channel_ids: List[ChatIdUnion], template_renderer: TemplateRenderer):
+    def __init__(self, channel_ids: List[ChatIdUnion], translator: Translator):
         super().__init__()
 
         self.channel_ids = channel_ids
-        self.renderer = template_renderer
+        self.translator = translator
 
     async def __call__(self, handler, event, data):
+        _ = self.translator.get()
+
         message = extract_message(event)
 
         if isinstance(message, Message):
@@ -24,11 +26,7 @@ class SubscriptionMiddleware(BaseMiddleware):
             for channel_id in self.channel_ids:
                 member = await message.bot.get_chat_member(channel_id, user_id)
                 if member.status in (ChatMemberStatus.KICKED, ChatMemberStatus.LEFT):
-                    await message.answer(
-                        await self.renderer.render(
-                            "messages/users/send/subscription_required.j2", message=message
-                        )
-                    )
+                    await message.answer(_("messages.user.subscription_required", message=message))
                     return
 
         return await handler(event, data)

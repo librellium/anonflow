@@ -5,17 +5,17 @@ from typing import Dict, Optional, List
 from aiogram import BaseMiddleware
 from aiogram.types import ChatIdUnion, Message
 
-from anonflow.bot.utils.template_renderer import TemplateRenderer
+from anonflow.translator import Translator
 
 from .utils import extract_message
 
 
 class UserSlowmodeMiddleware(BaseMiddleware):
-    def __init__(self, delay: float, template_renderer: TemplateRenderer, allowed_chat_ids: Optional[List[ChatIdUnion]] = []):
+    def __init__(self, delay: float, translator: Translator, allowed_chat_ids: Optional[List[ChatIdUnion]] = []):
         super().__init__()
 
         self.delay = delay
-        self.renderer = template_renderer
+        self.translator = translator
         self.allowed_chat_ids = allowed_chat_ids
 
         self.user_times: Dict[int, float] = {}
@@ -24,6 +24,8 @@ class UserSlowmodeMiddleware(BaseMiddleware):
         self.lock = asyncio.Lock()
 
     async def __call__(self, handler, event, data):
+        _ = self.translator.get()
+
         message = extract_message(event)
 
         if isinstance(message, Message) and message.chat.id not in self.allowed_chat_ids:
@@ -39,8 +41,8 @@ class UserSlowmodeMiddleware(BaseMiddleware):
                 current_time = time.monotonic()
 
                 await message.answer(
-                    await self.renderer.render(
-                        "messages/users/send/busy.j2",
+                    _(
+                        "messages.user.send_busy",
                         message=message,
                         remaining=round(self.delay - (current_time - start_time)) if start_time else None
                     )
@@ -48,8 +50,8 @@ class UserSlowmodeMiddleware(BaseMiddleware):
                 return
 
             async with user_lock:
-                result = await handler(event, data)
                 self.user_times[message.chat.id] = time.monotonic()
+                result = await handler(event, data)
                 await asyncio.sleep(self.delay)
 
             async with self.lock:
