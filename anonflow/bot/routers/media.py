@@ -6,10 +6,10 @@ from aiogram import F, Router
 from aiogram.enums import ChatType
 from aiogram.types import InputMediaPhoto, InputMediaVideo, Message
 
-from anonflow.bot.events.models import BotMessagePreparedEvent
+from anonflow.bot.events.models import BotMessagePreparedEvent, ModerationDecisionEvent
 from anonflow.bot.events.event_handler import EventHandler
 from anonflow.config import Config
-from anonflow.moderation import ModerationDecisionEvent, ModerationExecutor
+from anonflow.moderation import ModerationExecutor
 from anonflow.translator import Translator
 
 
