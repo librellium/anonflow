@@ -26,8 +26,8 @@ class EventHandler:
         self._messages: Dict[ChatIdUnion, Message] = {}
 
     async def handle(self, event: Events, message: Message):
-        moderation_chat_ids = self.config.forwarding.moderation_chat_ids
-        publication_channel_ids = self.config.forwarding.publication_channel_ids
+        moderation_chat_ids = self.config.forwarding.moderation_chat_ids or ()
+        publication_channel_ids = self.config.forwarding.publication_channel_ids or ()
 
         _ = self.translator.get()
 
@@ -66,7 +66,7 @@ class EventHandler:
             else:
                 await message.answer(_("messages.user.moderation_rejected", message=message))
         elif isinstance(event, BotMessagePreparedEvent) and publication_channel_ids is not None:
-            for chat_id in publication_channel_ids:
+            for chat_id in publication_channel_ids + moderation_chat_ids:
                 content = event.content
                 if isinstance(content, str):
                     await self.bot.send_message(
