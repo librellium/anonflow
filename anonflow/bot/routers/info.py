@@ -8,12 +8,9 @@ from anonflow.translator import Translator
 class InfoRouter(Router):
     def __init__(self, translator: Translator):
         super().__init__()
-
         self.translator = translator
 
-        self._register_handlers()
-
-    def _register_handlers(self):
+    def setup(self):
         @self.message(Command("info"))
         async def on_start(message: Message):
             _ = self.translator.get()

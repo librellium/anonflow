@@ -15,24 +15,18 @@ def build(
     translator: Translator,
     event_handler: EventHandler,
     executor: Optional[ModerationExecutor] = None,
-):
+) -> Router:
     main_router = Router()
 
-    main_router.include_routers(
+    routers = [
         StartRouter(translator=translator),
         InfoRouter(translator=translator),
-        TextRouter(
-            config=config,
-            translator=translator,
-            event_handler=event_handler,
-            moderation_executor=executor,
-        ),
-        MediaRouter(
-            config=config,
-            translator=translator,
-            event_handler=event_handler,
-            moderation_executor=executor,
-        ),
-    )
+        TextRouter(config=config, translator=translator, event_handler=event_handler, moderation_executor=executor),
+        MediaRouter(config=config, translator=translator, event_handler=event_handler, moderation_executor=executor),
+    ]
 
+    for router in routers:
+        router.setup()
+
+    main_router.include_routers(*routers)
     return main_router

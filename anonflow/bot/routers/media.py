@@ -32,9 +32,7 @@ class MediaRouter(Router):
         self.media_groups_tasks: Dict[str, asyncio.Task] = {}
         self.media_groups_lock = asyncio.Lock()
 
-        self._register_handlers()
-
-    def _register_handlers(self):
+    def setup(self):
         @self.message(F.photo | F.video)
         async def on_photo(message: Message):
             if message.chat.type != ChatType.PRIVATE:
