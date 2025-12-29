@@ -30,7 +30,7 @@ class SlowmodeMiddleware(BaseMiddleware):
 
         if isinstance(message, Message) and message.chat.id not in self.allowed_chat_ids:
             text = message.text or message.caption
-            if text and text.startswith("/"):
+            if text and text.startswith("/") and not text.startswith("/post"):
                 return await handler(event, data)
 
             async with self.lock:
