@@ -12,6 +12,8 @@ from anonflow.config import Config
 from anonflow.moderation import ModerationExecutor
 from anonflow.translator import Translator
 
+from . import utils
+
 
 class MediaRouter(Router):
     def __init__(
@@ -33,53 +35,50 @@ class MediaRouter(Router):
         self.media_groups_lock = asyncio.Lock()
 
     def setup(self):
-        @self.message(F.photo | F.video)
-        async def on_photo(message: Message):
-            if message.chat.type != ChatType.PRIVATE:
+        def can_send_media(msgs: List[Message]):
+            forwarding_types = self.config.forwarding.types
+            return any(
+                (msg.photo and "photo" in forwarding_types) or
+                (msg.video and "video" in forwarding_types)
+                for msg in msgs
+            )
+
+        def get_media(message: Message, caption: str):
+            if message.photo and "photo" in self.config.forwarding.types:
+                return InputMediaPhoto(media=message.photo[-1].file_id, caption=caption)
+            elif message.video and "video" in self.config.forwarding.types:
+                return InputMediaVideo(media=message.video.file_id, caption=caption)
+
+        async def process_messages(messages: List[Message], is_post: bool):
+            if not messages:
                 return
 
-            def can_send_media(msgs: List[Message]):
-                photos = len([msg for msg in msgs if msg.photo])
-                videos = len([msg for msg in msgs if msg.video])
+            if can_send_media(messages):
+                moderation = self.config.moderation.enabled
+                moderation_approved = not moderation
 
-                return (
-                    photos and "photo" in self.config.forwarding.types
-                ) or (
-                    videos and "video" in self.config.forwarding.types
+                content = []
+                for message in messages:
+                    msg = utils.strip_post_command(message)
+                    if moderation and is_post and msg.caption:
+                        async for event in self.executor.process_message(msg): # type: ignore
+                            if isinstance(event, ModerationDecisionEvent):
+                                moderation_approved = moderation_approved and event.approved
+                            await self.event_handler.handle(event, msg)
+
+                    _ = self.translator.get()
+                    caption = _("messages.channel.media", message=msg) if is_post else (msg.caption or "")
+                    content.append(get_media(msg, caption))
+
+                await self.event_handler.handle(
+                    BotMessagePreparedEvent(content, is_post, moderation_approved),
+                    messages[0]
                 )
 
-            async def get_media(msg: Message):
-                _ = self.translator.get()
-
-                caption = _("messages.channel.media", message=msg)
-
-                if msg.photo and "photo" in self.config.forwarding.types:
-                    return InputMediaPhoto(media=msg.photo[-1].file_id, caption=caption)
-                elif msg.video and "video" in self.config.forwarding.types:
-                    return InputMediaVideo(media=msg.video.file_id, caption=caption)
-
-            async def process_messages(messages: list[Message]):
-                if not messages:
-                    return
-
-                _ = self.translator.get()
-
-                if can_send_media(messages):
-                    moderation = self.config.moderation.enabled
-                    moderation_passed = not moderation
-
-                    media = []
-                    for msg in messages:
-                        if moderation and msg.caption:
-                            async for event in self.executor.process_message(msg):
-                                if isinstance(event, ModerationDecisionEvent):
-                                    moderation_passed = event.approved
-                                await self.event_handler.handle(event, message)
-
-                        media.append(await get_media(msg))
-
-                    if moderation_passed:
-                        await self.event_handler.handle(BotMessagePreparedEvent(media), messages[0])
+        @self.message(F.photo | F.video)
+        async def on_photo(message: Message, is_post: bool):
+            if message.chat.type != ChatType.PRIVATE:
+                return
 
             media_group_id = message.media_group_id
 
@@ -87,22 +86,23 @@ class MediaRouter(Router):
                 try:
                     await asyncio.sleep(2)
                     async with self.media_groups_lock:
-                        messages = self.media_groups.pop(media_group_id, [])
-                        self.media_groups_tasks.pop(media_group_id, None)
-                    await process_messages(messages)
+                        messages = self.media_groups.pop(media_group_id, []) # type: ignore
+                        self.media_groups_tasks.pop(media_group_id, None) # type: ignore
+                    await process_messages(messages, is_post)
                 except CancelledError:
                     pass
 
             if media_group_id:
-                self.media_groups.setdefault(media_group_id, []).append(message)
+                async with self.media_groups_lock:
+                    self.media_groups.setdefault(media_group_id, []).append(message)
 
-                task = self.media_groups_tasks.get(media_group_id)
-                if task:
-                    task.cancel()
+                    task = self.media_groups_tasks.get(media_group_id)
+                    if task:
+                        task.cancel()
 
-                self.media_groups_tasks[media_group_id] = asyncio.create_task(
-                    await_media_group()
-                )
+                    self.media_groups_tasks[media_group_id] = asyncio.create_task(
+                        await_media_group()
+                    )
                 return
 
-            await process_messages([message])
+            await process_messages([message], is_post)

@@ -7,6 +7,8 @@ from aiogram.types import ChatIdUnion, MediaUnion
 @dataclass
 class BotMessagePreparedEvent:
     content: Union[str, List[MediaUnion]]
+    is_post: bool
+    moderation_approved: bool
 
 @dataclass
 class ExecutorDeletionEvent:

@@ -10,6 +10,8 @@ from anonflow.config import Config
 from anonflow.moderation import ModerationExecutor
 from anonflow.translator import Translator
 
+from . import utils
+
 
 class TextRouter(Router):
     def __init__(
@@ -28,22 +30,24 @@ class TextRouter(Router):
 
     def setup(self):
         @self.message(F.text)
-        async def on_text(message: Message):
-
-            _ = self.translator.get()
-
+        async def on_text(message: Message, is_post: bool):
             moderation = self.config.moderation.enabled
-            moderation_passed = not moderation
+            moderation_approved = not moderation
 
             if (
                 message.chat.type == ChatType.PRIVATE
                 and "text" in self.config.forwarding.types
             ):
-                if moderation:
-                    async for event in self.executor.process_message(message): # type: ignore
+                msg = utils.strip_post_command(message)
+                if moderation and is_post:
+                    async for event in self.executor.process_message(msg): # type: ignore
                         if isinstance(event, ModerationDecisionEvent):
-                            moderation_passed = event.approved
-                        await self.event_handler.handle(event, message)
+                            moderation_approved = event.approved
+                        await self.event_handler.handle(event, msg)
 
-                if moderation_passed:
-                    await self.event_handler.handle(BotMessagePreparedEvent(_("messages.channel.text", message=message)), message)
+                _ = self.translator.get()
+                content = _("messages.channel.text", message=msg) if is_post else (msg.text or "")
+                await self.event_handler.handle(
+                    BotMessagePreparedEvent(content, is_post, moderation_approved),
+                    msg
+                )

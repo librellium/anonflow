@@ -61,24 +61,20 @@ class EventHandler:
                 if isinstance(msg, Message):
                     await msg.delete()
 
-            if event.approved:
-                await message.answer(_("messages.user.send_success", message=message))
-            else:
+            if not event.approved:
                 await message.answer(_("messages.user.moderation_rejected", message=message))
         elif isinstance(event, BotMessagePreparedEvent) and publication_channel_ids is not None:
-            for chat_id in publication_channel_ids + moderation_chat_ids:
+            chat_ids = moderation_chat_ids
+            if event.moderation_approved and event.is_post:
+                chat_ids += publication_channel_ids
+
+            for chat_id in chat_ids:
                 content = event.content
                 if isinstance(content, str):
-                    await self.bot.send_message(
-                        chat_id,
-                        _("messages.channel.text", message=message)
-                    )
+                    await self.bot.send_message(chat_id, content)
                 if isinstance(content, list):
                     if len(content) > 1:
-                        await self.bot.send_media_group(
-                            chat_id,
-                            content
-                        )
+                        await self.bot.send_media_group(chat_id, content)
                     else:
                         input_media = content[0]
                         if isinstance(input_media, InputMediaPhoto):
@@ -93,6 +89,9 @@ class EventHandler:
                                 input_media.media,
                                 caption=input_media.caption
                             )
+
+            if event.moderation_approved or not event.is_post:
+                await message.answer(_("messages.user.send_success", message=message))
         elif isinstance(event, ExecutorDeletionEvent) and moderation_chat_ids:
             for chat_id in moderation_chat_ids:
                 if event.success:

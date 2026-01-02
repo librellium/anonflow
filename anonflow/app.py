@@ -6,6 +6,7 @@ from aiogram.client.bot import DefaultBotProperties
 from anonflow.bot import (
     EventHandler,
     SlowmodeMiddleware,
+    PostCommandMiddleware,
     SubscriptionMiddleware,
     build
 )
@@ -105,6 +106,10 @@ class Application:
                     allowed_chat_ids=config.forwarding.moderation_chat_ids # type: ignore
                 )
             )
+
+        dispatcher.update.middleware( # type: ignore
+            PostCommandMiddleware()
+        )
 
     def _init_event_handler(self):
         bot, config, translator = (
