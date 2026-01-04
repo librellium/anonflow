@@ -6,6 +6,9 @@ import sys
 
 from anonflow import __version_str__, paths
 
+def check_cmd(cmd: str):
+    return shutil.which(cmd) is not None
+
 def check_translations():
     mo_files, po_files = set(), set()
     for root, dirs, files in os.walk(paths.TRANSLATIONS_DIR):
@@ -18,11 +21,23 @@ def check_translations():
     return mo_files == po_files
 
 def compile_translations():
-    if not shutil.which("pybabel"):
-        raise RuntimeError("Pybabel not found.")
+    if not check_cmd("pybabel"):
+        raise RuntimeError("pybabel not found.")
 
     subprocess.run(["pybabel", "compile", "-d", paths.TRANSLATIONS_DIR], check=True)
     print("Translations compilation done.")
+
+def make_migrations():
+    if not check_cmd("alembic"):
+        raise RuntimeError("alembic not found.")
+
+    subprocess.run(["alembic", "revision", "--autogenerate"], check=True)
+
+def migrate(revision: str):
+    if not check_cmd("alembic"):
+        raise RuntimeError("alembic not found.")
+
+    subprocess.run(["alembic", "upgrade", revision], check=True)
 
 def main():
     os.environ["VERSION"] = __version_str__
@@ -34,6 +49,10 @@ def main():
 
     deploy_parser = subparsers.add_parser("deploy", help="Build and manage containers via docker compose")
     deploy_parser.add_argument("docker_args", nargs=argparse.REMAINDER, help="Additional docker compose commands")
+
+    subparsers.add_parser("makemigrations", help="Generate new Alembic migration")
+    migrate_parser = subparsers.add_parser("migrate", help="Apply all Alembic migrations")
+    migrate_parser.add_argument("revision", nargs="?", default="head", help="Revision to upgrade to (default: head)")
 
     args = parser.parse_args()
 
@@ -51,6 +70,10 @@ def main():
             else:
                 print(f"Running 'docker compose {' '.join(args.docker_args)}'")
                 subprocess.run(["docker", "compose"] + args.docker_args)
+        elif args.command == "makemigrations":
+            make_migrations()
+        elif args.command == "migrate":
+            migrate(args.revision)
     except KeyboardInterrupt:
         pass
 

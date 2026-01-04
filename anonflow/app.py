@@ -11,6 +11,7 @@ from anonflow.bot import (
     build
 )
 from anonflow.config import Config
+from anonflow.database import Database
 from anonflow.moderation import (
     ModerationExecutor,
     ModerationPlanner,
@@ -56,6 +57,12 @@ class Application:
             Config().save(config_filepath)
 
         self.config = Config.load(config_filepath)
+
+    async def _init_database(self):
+        database_filepath = paths.DATABASE_FILEPATH
+
+        self.database = Database(database_filepath)
+        await self.database.init()
 
     def _init_logging(self):
         config = self.config
@@ -139,6 +146,7 @@ class Application:
 
     async def init(self):
         self._init_config()
+        await self._init_database()
         self._init_logging()
         self._init_bot()
         await self._init_translator()
@@ -166,4 +174,7 @@ class Application:
             )
         )
 
-        await dispatcher.start_polling(bot) # type: ignore
+        try:
+            await dispatcher.start_polling(bot) # type: ignore
+        finally:
+            await self.database.close()

@@ -6,6 +6,7 @@ from aiogram.types import Message
 
 from anonflow.bot.events.models import BotMessagePreparedEvent
 from anonflow.bot.events.event_handler import EventHandler, ModerationDecisionEvent
+from anonflow.database import Database
 from anonflow.config import Config
 from anonflow.moderation import ModerationExecutor
 from anonflow.translator import Translator
@@ -17,6 +18,7 @@ class TextRouter(Router):
     def __init__(
         self,
         config: Config,
+        database: Database,
         translator: Translator,
         event_handler: EventHandler,
         moderation_executor: Optional[ModerationExecutor] = None,
@@ -24,6 +26,7 @@ class TextRouter(Router):
         super().__init__()
 
         self.config = config
+        self.database = database
         self.translator = translator
         self.event_handler = event_handler
         self.executor = moderation_executor
