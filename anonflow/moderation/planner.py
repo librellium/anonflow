@@ -1,13 +1,15 @@
+import copy
 import inspect
 import json
+import textwrap
 import logging
-from json import JSONDecodeError
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
-from openai import APIResponseValidationError, AsyncOpenAI
+from openai import AsyncOpenAI
 
 from anonflow.config import Config
 
+from .exceptions import ModerationPlannerParseError, ModerationPlannerNoAvailableFunctionsError
 from .rule_manager import RuleManager
 
 
@@ -48,7 +50,7 @@ class ModerationPlanner:
             }
 
             self._functions.append(
-                {"name": func.__name__, "args": args, "description": func.__doc__ or ""}
+                {"name": func.__name__, "args": args, "description": func.description or ""}
             )
 
         function_names = self.get_function_names()
@@ -62,19 +64,43 @@ class ModerationPlanner:
             f"Functions added: {', '.join(function_names)}. Total={len(self._functions)}"
         )
 
-    def get_function_names(self) -> List[str]:
-        return [name for f in self._functions if (name := f.get("name"))]
+    def get_functions(self):
+        return copy.deepcopy(self._functions)
 
-    async def plan(
-        self, text: Optional[str] = None, image: Optional[str] = None
-    ) -> List[Dict[str, Union[list, str]]]:
+    def get_function_names(self) -> List[str]:
+        return [f["name"] for f in self._functions if "name" in f]
+
+    @staticmethod
+    def build_functions_prompt(functions: List[Dict[str, Any]]) -> str:
+        lines = []
+
+        for func in functions:
+            args = ", ".join(
+                f"{arg}: {ann}"
+                for arg, ann in func.get("args", {}).items()
+            )
+
+            line = f"- {func['name']}({args})"
+
+            if func.get("description"):
+                line += f" — {func['description']}"
+
+            lines.append(line)
+
+        return "\n".join(lines)
+
+    async def plan(self, text: Optional[str] = None, image: Optional[str] = None):
         if not self.moderation:
-            return [
-                {
-                    "name": "moderation_decision",
-                    "args": ["APPROVE", "Модерация выключена."]
+            return [{
+                "name": "moderation_decision",
+                "args": {
+                    "status": "approve",
+                    "reason": "Модерация выключена."
                 }
-            ]
+            }]
+
+        if not self.get_functions():
+            raise ModerationPlannerNoAvailableFunctionsError()
 
         if "omni" in self.config.moderation.types:
             content = []
@@ -89,70 +115,73 @@ class ModerationPlanner:
                 )
 
                 if moderation.results[0].flagged:
-                    return [
-                        {
-                            "name": "moderation_decision",
-                            "args": ["REJECT", "Сообщение заблокировано автомодератором."]
+                    return [{
+                        "name": "moderation_decision",
+                        "args": {
+                            "status": "reject",
+                            "reason": "Сообщение заблокировано автомодератором."
                         }
-                    ]
+                    }]
 
         if "gpt" in self.config.moderation.types and text:
-            funcs = self._functions
-            funcs_prompt = "\n".join(
-                f"- {func['name']}({', '.join(f'{arg}: {ann}' for arg, ann in (func.get('args') or {}).items())})"
-                f" - {func.get('description', '')}"
-                for func in funcs
-            )
+            functions = self.get_functions()
+            functions_prompt = self.build_functions_prompt(functions)
 
-            retry = 0
-            result = None
-
-            while retry <= self._client.max_retries:
+            output = None
+            for attempt in range(self._client.max_retries + 1):
                 response = await self._client.responses.create(
                     model=self.config.moderation.model,
                     input=[
                         {
                             "role": "system",
-                            "content": "Respond strictly with a JSON array in the following format:\n"
-                            '`[{"name": ..., "args": [...]} , ...]`\n'
-                            "`name` - the function name, `args` - an ordered list of arguments.\n"
-                            "Output only a valid JSON. Choose functions based on the user's request and the function descriptions.\n"
-                            "You are allowed to call multiple functions, listing them in order in the output.\n\n"
-                            "**IMPORTANT:**\n"
-                            "- Each function must include **all and only the required arguments** specified in its description.\n"
-                            "- Do not invent additional arguments.\n"
-                            "- Do not omit required arguments.\n"
-                            "- `args` must be in the order specified in the function description.\n\n"
-                            "Available functions:\n"
-                            f"{funcs_prompt}",
+                            "content": textwrap.dedent(
+                                f'''
+                                Respond strictly with a JSON array in the following format:
+                                `[{{"name": ..., "args": {{...}}}}, ...]`
+                                `name` - the function name, `args` - dict of arguments.
+                                Output only a valid JSON. Choose functions based on the user's request and the function descriptions.
+                                You are allowed to call multiple functions, listing them in order in the output.
+
+                                **IMPORTANT:**
+                                - Each function must include **all and only the required arguments** specified in its description.
+                                - Do not invent additional arguments.
+                                - Do not omit required arguments.
+                                Available functions:
+                                {functions_prompt}
+                                '''
+                            ).strip(),
                         },
                         *[
                             {"role": "system", "content": rule}
                             for rule in self.rule_manager.get_rules()
                         ],
                         {"role": "user", "content": text},
-                    ],
+                    ]
                 )
 
                 try:
-                    text = response.output_text
+                    output = json.loads(response.output_text)
 
-                    start = text.index("[")
-                    end = text.rindex("]") + 1
+                    if not isinstance(output, list) or not all(isinstance(obj, dict) for obj in output):
+                        raise ModerationPlannerParseError()
 
-                    result = json.loads(text[start:end])
                     break
-                except JSONDecodeError:
-                    retry += 1
+                except (ValueError, ModerationPlannerParseError):
+                    self._logger.warning(
+                        "Failed to parse response. Attempt %d/%d.",
+                        attempt + 1,
+                        self._client.max_retries + 1,
+                    )
 
-            if not result:
-                raise APIResponseValidationError()
+            if output is None:
+                raise ModerationPlannerParseError()
 
-            return result
+            return output
 
-        return [
-            {
-                "name": "moderation_decision",
-                "args": ["APPROVE", "Модераторы не сработали."],
+        return [{
+            "name": "moderation_decision",
+            "args": {
+                "status": "approve",
+                "reason": "Модераторы не сработали."
             }
-        ]
+        }]

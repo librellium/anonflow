@@ -11,7 +11,6 @@ from anonflow.translator import Translator
 from .models import (
     BotMessagePreparedEvent,
     Events,
-    ExecutorDeletionEvent,
     ModerationDecisionEvent,
     ModerationStartedEvent
 )
@@ -43,7 +42,7 @@ class EventHandler:
                         _(
                             "messages.staff.moderation_approved",
                             message=message,
-                            explanation=event.explanation,
+                            explanation=event.reason,
                         )
                     )
                 else:
@@ -52,7 +51,7 @@ class EventHandler:
                         _(
                             "messages.staff.moderation_rejected",
                             message=message,
-                            explanation=event.explanation,
+                            explanation=event.reason,
                         )
                     )
 
@@ -92,23 +91,3 @@ class EventHandler:
 
             if event.moderation_approved or not event.is_post:
                 await message.answer(_("messages.user.send_success", message=message))
-        elif isinstance(event, ExecutorDeletionEvent) and moderation_chat_ids:
-            for chat_id in moderation_chat_ids:
-                if event.success:
-                    await self.bot.send_message(
-                        chat_id,
-                        _(
-                            "messages.staff.deletion_success",
-                            message=message,
-                            message_id=event.message_id,
-                        )
-                    )
-                else:
-                    await self.bot.send_message(
-                        chat_id,
-                        _(
-                            "messages.staff.deletion_failure",
-                            message=message,
-                            message_id=event.message_id,
-                        )
-                    )
