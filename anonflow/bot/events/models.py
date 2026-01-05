@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import List, Optional, Union
+from typing import List, Union
 
-from aiogram.types import ChatIdUnion, MediaUnion
+from aiogram.types import MediaUnion
 
 
 @dataclass
@@ -10,16 +10,11 @@ class BotMessagePreparedEvent:
     is_post: bool
     moderation_approved: bool
 
-@dataclass
-class ExecutorDeletionEvent:
-    success: bool
-    message_id: Optional[ChatIdUnion] = None
-
 
 @dataclass
 class ModerationDecisionEvent:
     approved: bool
-    explanation: str
+    reason: str
 
 
 @dataclass
@@ -27,4 +22,4 @@ class ModerationStartedEvent:
     pass
 
 
-Events = Union[BotMessagePreparedEvent, ExecutorDeletionEvent, ModerationDecisionEvent, ModerationStartedEvent]
+Events = Union[BotMessagePreparedEvent, ModerationDecisionEvent, ModerationStartedEvent]
