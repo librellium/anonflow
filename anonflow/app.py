@@ -187,11 +187,12 @@ class Application:
     async def run(self):
         await self.init()
 
-        bot, dispatcher, config, database, translator, event_handler = (
+        bot, dispatcher, config, database, user_repository, translator, event_handler = (
             self.bot,
             self.dispatcher,
             self.config,
             self.database,
+            self.user_repository,
             self.translator,
             self.event_handler
         )
@@ -200,6 +201,7 @@ class Application:
             build(
                 config=config, # type: ignore
                 database=database, # type: ignore
+                user_repository=user_repository, # type: ignore
                 translator=translator, # type: ignore
                 event_handler=event_handler, # type: ignore
                 executor=self.executor,
