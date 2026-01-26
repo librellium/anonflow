@@ -1,6 +1,8 @@
 import asyncio
+import base64
 import logging
 import textwrap
+from io import BytesIO
 from typing import AsyncGenerator
 
 from aiogram import Bot
@@ -43,10 +45,24 @@ class ModerationExecutor:
         """
     ).strip()
 
+    async def _get_b64image(self, message: Message):
+        if message.photo:
+            photo = message.photo[-1]
+            file = await self.bot.get_file(photo.file_id)
+            if file:
+                buffer = BytesIO()
+                await self.bot.download(file, buffer)
+                buffer.seek(0)
+                return (base64.b64encode(buffer.read())).decode()
+
     async def process_message(self, message: Message) -> AsyncGenerator[Events, None]:
         yield ModerationStartedEvent()
 
-        functions = await self.planner.plan((message.text or message.caption))
+        image = await self._get_b64image(message)
+        functions = await self.planner.plan(
+            (message.text or message.caption),
+            f"data:image/jpeg;base64,{image}" if image else None
+        )
         function_names = self.planner.get_function_names()
 
         for func in functions:
@@ -59,11 +75,11 @@ class ModerationExecutor:
                 self._logger.warning("Function %s not found, skipping.", func_name)
                 continue
 
-            self._logger.info(f"Executing %s.", func_name)
+            self._logger.info("Executing %s.", func_name)
             try:
                 if asyncio.iscoroutinefunction(method):
                     yield await method(**func_args)
                 else:
-                    yield await asyncio.to_thread(lambda: method(**func_args)) # type: ignore
+                    yield await asyncio.to_thread(method, **func_args)
             except Exception:
-                self._logger.exception(f"Failed to execute %s.", func_name)
+                self._logger.exception("Failed to execute %s.", func_name)
