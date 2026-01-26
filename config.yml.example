@@ -1,36 +1,137 @@
 bot:
-  token: null
+  # Telegram bot token, passed via environment variable BOT_TOKEN.
+  # Used by aiogram to connect to the Telegram Bot API.
+  token: ${BOT_TOKEN}
+
+  # HTTP timeout (in seconds) for requests made by aiogram to Telegram.
+  # aiogram internally handles retries on some network errors; this value
+  # only defines how long a single HTTP request may take before timing out.
   timeout: 15
+
 behavior:
-  slowmode:
+  throttling:
+    # Enable/disable throttling for user-submitted posts.
+    # When enabled, each user must wait `delay` seconds between submissions.
     enabled: true
+
+    # Minimal delay (in seconds) between two post submissions from the same user.
+    # The delay is measured between the moments when the user's requests are processed by the bot.
     delay: 120
+
   subscription_requirement:
+    # Require users to be subscribed to specific Telegram channels before they can use the bot.
+    # If enabled, the bot checks subscription status for each user action.
     enabled: false
-    channel_ids: null
+
+    # List of Telegram chat_ids (channels) that the user must be subscribed to.
+    channel_ids: []
+
 database:
-  backend: sqlite+aiosqlite
-  name_or_path: //home/user/anonflow.db
+  # SQLAlchemy database backend/driver.
+  # Any backend supported by SQLAlchemy can be used.
+  backend: ${DB_BACKEND}
+
+  # Database name or path:
+  # - For server databases (Postgres, MySQL, etc.): logical DB name.
+  # - For SQLite: filesystem path to the DB file.
+  # For SQLite, all other connection fields (host, port, username, password) are ignored.
+  name_or_path: ${DB_NAME_OR_PATH}
+
+  # Database host (server address). Used for server databases only.
+  # Ignored for SQLite.
+  host: ${DB_HOST}
+
+  # Database port. Used for server databases only.
+  # Ignored for SQLite.
+  port: ${DB_PORT}
+
+  # Database user name. Used for server databases only.
+  # Ignored for SQLite.
+  username: ${DB_USERNAME}
+
+  # Database user password. Used for server databases only.
+  # Ignored for SQLite.
+  password: ${DB_PASSWORD}
+
   migrations:
-    backend: sqlite
+    # Migrations backend. Project uses Alembic for schema migrations.
+    # Alembic is configured to work with the same SQLAlchemy URL.
+    backend: ${DB_MIGRATIONS_BACKEND}
+
+  repositories:
+    user:
+      # Maximum number of user records cached in memory.
+      cache_size: 1024
+
+      # Time-to-live for cached user objects (in seconds).
+      cache_ttl: 60
+
 forwarding:
-  moderation_chat_ids: null
-  publication_channel_ids: null
+  # Telegram chat_ids where decisions of the moderation module are sent.
+  # Typically these are chats for moderators that receive moderation results.
+  moderation_chat_ids: []
+
+  # Telegram chat_ids where approved posts are published.
+  # Once approved, messages are forwarded to all configured publication channels.
+  publication_channel_ids: []
+
+  # List of Telegram message types that are handled and can be forwarded
+  # by the bot: text messages, photos, videos, etc.
+  # Types correspond to Telegram message content types.
   types:
     - text
     - photo
     - video
+
 openai:
-  api_key: null
-  timeout: 60
-  max_retries: 0
+  # OpenAI API key used by the client.
+  # Can be provided via OPENAI_API_KEY environment variable.
+  api_key: ${OPENAI_API_KEY}
+
+  # HTTP timeout (in seconds) for requests made.
+  # If a request exceeds this timeout, the client considers it failed and
+  # may retry according to `max_retries`.
+  timeout: 30
+
+  # Maximum number of retry attempts for OpenAI requests when
+  # a timeout or other transient error occurs. If all attempts fail,
+  # an exception is raised and handled by the application code.
+  max_retries: 2
+
 moderation:
+  # Enable/disable automatic content moderation. If disabled, messages
+  # are not checked by any OpenAI moderation models and are sent directly
+  # to the configured moderation and/or publication chats.
   enabled: true
+
+  # Name of the OpenAI model used for moderation.
+  # This is a real model name and is passed directly
+  # to the OpenAI SDK when performing moderation checks.
   model: gpt-5-mini
+
+  # Types of moderation flows that are enabled:
+  # - "omni": use omni-moderation (specialized moderation model).
+  # - "gpt": use a ChatGPT model to analyze/check content.
+  # Both flows rely on the OpenAI SDK, and the type determines which
+  # moderation strategy is applied for a given request.
   types:
     - omni
     - gpt
+
 logging:
+  # Global logging level for the application.
+  # Typical values: DEBUG, INFO, WARNING, ERROR, CRITICAL.
   level: INFO
+  
+  # Log message format string.
+  # Fields:
+  # - %(asctime)s  : timestamp (formatted with date_fmt)
+  # - %(msecs)03d  : milliseconds
+  # - %(levelname)s: log level
+  # - %(name)s     : logger name
+  # - %(message)s  : log message text
   fmt: '%(asctime)s.%(msecs)03d %(levelname)s [%(name)s] %(message)s'
+
+  # Date/time format for %(asctime)s (strftime syntax).
+  # Example output: 2024-01-01 12:34:56
   date_fmt: '%Y-%m-%d %H:%M:%S'

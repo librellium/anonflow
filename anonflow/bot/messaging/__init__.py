@@ -6,4 +6,10 @@ from .events import (
     ModerationStartedEvent
 )
 
-__all__ = ["MessageSender", "BotMessagePreparedEvent", "Events", "ModerationDecisionEvent", "ModerationStartedEvent"]
+__all__ = [
+    "MessageSender",
+    "BotMessagePreparedEvent",
+    "Events",
+    "ModerationDecisionEvent",
+    "ModerationStartedEvent"
+]

@@ -4,8 +4,6 @@ from aiogram.types import Message
 from anonflow.database import UserRepository
 from anonflow.translator import Translator
 
-from .utils import extract_message
-
 
 class BlockedMiddleware(BaseMiddleware):
     def __init__(self, user_repository: UserRepository, translator: Translator):
@@ -17,7 +15,7 @@ class BlockedMiddleware(BaseMiddleware):
     async def __call__(self, handler, event, data):
         _ = self.translator.get()
 
-        message = extract_message(event)
+        message = getattr(event, "message", None)
         if isinstance(message, Message):
             user = await self.user_repository.get(message.chat.id)
 

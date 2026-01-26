@@ -6,9 +6,8 @@ from aiogram import BaseMiddleware
 from aiogram.fsm.context import FSMContext
 from aiogram.types import ChatIdUnion, Message
 
+from anonflow.bot.states import SupportStates
 from anonflow.translator import Translator
-
-from .utils import extract_message
 
 
 class ThrottlingMiddleware(BaseMiddleware):
@@ -27,14 +26,11 @@ class ThrottlingMiddleware(BaseMiddleware):
     async def __call__(self, handler, event, data):
         _ = self.translator.get()
 
-        message = extract_message(event)
-
+        message = getattr(event, "message", None)
         if isinstance(message, Message) and message.chat.id not in self.allowed_chat_ids:
-
             state: Optional[FSMContext] = data.get("state")
             text = message.text or message.caption or ""
-
-            if not state or not await state.get_state() and not text.startswith("/"):
+            if not state or (await state.get_state()) != SupportStates.in_support and not text.startswith("/"):
                 async with self.lock:
                     user_lock = self.user_locks.setdefault(message.chat.id, asyncio.Lock())
 

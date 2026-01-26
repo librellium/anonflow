@@ -5,8 +5,6 @@ from aiogram.types import Message
 from anonflow.database import UserRepository
 from anonflow.translator import Translator
 
-from .utils import extract_message
-
 
 class RegisteredMiddleware(BaseMiddleware):
     def __init__(self, user_repository: UserRepository, translator: Translator):
@@ -18,7 +16,7 @@ class RegisteredMiddleware(BaseMiddleware):
     async def __call__(self, handler, event, data):
         _ = self.translator.get()
 
-        message = extract_message(event)
+        message = getattr(event, "message", None)
         if isinstance(message, Message) and message.chat.type == ChatType.PRIVATE:
             text = message.text or message.caption or ""
 
