@@ -10,16 +10,13 @@ class BotMessagePreparedEvent:
     is_post: bool
     moderation_approved: bool
 
-
 @dataclass
 class ModerationDecisionEvent:
     approved: bool
     reason: str
 
-
 @dataclass
 class ModerationStartedEvent:
     pass
-
 
 Events = Union[BotMessagePreparedEvent, ModerationDecisionEvent, ModerationStartedEvent]
