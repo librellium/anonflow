@@ -61,7 +61,7 @@ class ModerationPlanner:
             )
 
         self._logger.info(
-            f"Functions added: {', '.join(function_names)}. Total={len(self._functions)}"
+            f"Functions set: {', '.join(function_names)}. Total={len(self._functions)}"
         )
 
     def get_functions(self):
@@ -151,10 +151,10 @@ class ModerationPlanner:
                                 '''
                             ).strip(),
                         },
-                        *[
-                            {"role": "system", "content": rule}
-                            for rule in self.rule_manager.get_rules()
-                        ],
+                        {
+                            "role": "system",
+                            "content": "\n\n".join(self.rule_manager.get_rules())
+                        },
                         {"role": "user", "content": text},
                     ]
                 )
