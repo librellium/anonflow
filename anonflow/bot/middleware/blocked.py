@@ -1,15 +1,15 @@
 from aiogram import BaseMiddleware
 from aiogram.types import Message
 
-from anonflow.database import UserRepository
+from anonflow.services import ModeratorService
 from anonflow.translator import Translator
 
 
 class BlockedMiddleware(BaseMiddleware):
-    def __init__(self, user_repository: UserRepository, translator: Translator):
+    def __init__(self, moderator_service: ModeratorService, translator: Translator):
         super().__init__()
 
-        self.user_repository = user_repository
+        self.moderator_service = moderator_service
         self.translator = translator
 
     async def __call__(self, handler, event, data):
@@ -17,9 +17,7 @@ class BlockedMiddleware(BaseMiddleware):
 
         message = getattr(event, "message", None)
         if isinstance(message, Message):
-            user = await self.user_repository.get(message.chat.id)
-
-            if user and user.is_blocked:
+            if await self.moderator_service.is_banned(message.chat.id):
                 await message.answer(_("messages.user.blocked", message))
                 return
 
