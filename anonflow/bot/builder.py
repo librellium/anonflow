@@ -3,8 +3,9 @@ from typing import Optional
 from aiogram import Router
 
 from anonflow.config import Config
-from anonflow.database import Database, UserRepository
+from anonflow.database import Database
 from anonflow.moderation import ModerationExecutor
+from anonflow.services import ModeratorService, UserService
 from anonflow.translator import Translator
 
 from .messaging import MessageSender
@@ -14,7 +15,8 @@ from .routers import InfoRouter, MediaRouter, StartRouter, TextRouter
 def build(
     config: Config,
     database: Database,
-    user_repository: UserRepository,
+    moderator_service: ModeratorService,
+    user_service: UserService,
     translator: Translator,
     message_sender: MessageSender,
     moderation_executor: Optional[ModerationExecutor] = None,
@@ -24,7 +26,7 @@ def build(
     routers = [
         StartRouter(
             translator=translator,
-            user_repository=user_repository
+            user_service=user_service
         ),
         InfoRouter(translator=translator),
         TextRouter(

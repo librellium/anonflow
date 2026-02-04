@@ -1,6 +1,6 @@
 import asyncio
 from asyncio import CancelledError
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 from aiogram import F, Router
 from aiogram.enums import ChatType

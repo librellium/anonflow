@@ -17,6 +17,8 @@ from anonflow.bot import (
 from anonflow.config import Config
 from anonflow.database import (
     Database,
+    BanRepository,
+    ModeratorRepository,
     UserRepository
 )
 from anonflow.moderation import (
@@ -24,6 +26,7 @@ from anonflow.moderation import (
     ModerationPlanner,
     RuleManager
 )
+from anonflow.services import ModeratorService, UserService
 from anonflow.translator import Translator
 
 from . import paths
@@ -45,7 +48,8 @@ class Application:
         self.dispatcher: Optional[Dispatcher] = None
         self.config: Optional[Config] = None
         self.database: Optional[Database] = None
-        self.user_repository: Optional[UserRepository] = None
+        self.moderator_service: Optional[ModeratorService] = None
+        self.user_service: Optional[UserService] = None
         self.translator: Optional[Translator] = None
         self.moderation_executor: Optional[ModerationExecutor] = None
         self.message_sender: Optional[MessageSender] = None
@@ -65,10 +69,14 @@ class Application:
         self.database = Database(config.get_database_url())
         await self.database.init()
 
-        self.user_repository = UserRepository(
+        self.user_service = UserService(
             self.database,
-            config.database.repositories.user.cache_size,
-            config.database.repositories.user.cache_ttl
+            UserRepository()
+        )
+        self.moderator_service = ModeratorService(
+            self.database,
+            BanRepository(),
+            ModeratorRepository()
         )
 
     def _init_logging(self):
@@ -101,11 +109,12 @@ class Application:
         dispatcher = req("dispatcher", self.dispatcher)
         config = req("config", self.config)
         translator = req("translator", self.translator)
-        user_repository = req("user_repository", self.user_repository)
+        moderator_service = req("moderator_service", self.moderator_service)
+        user_service = req("user_service", self.user_service)
 
         dispatcher.update.middleware(
             BlockedMiddleware(
-                user_repository=user_repository,
+                moderator_service=moderator_service,
                 translator=translator,
             )
         )
@@ -120,7 +129,7 @@ class Application:
 
         dispatcher.update.middleware(
             RegisteredMiddleware(
-                user_repository=user_repository,
+                user_service=user_service,
                 translator=translator,
             )
         )
@@ -179,7 +188,8 @@ class Application:
         dispatcher = req("dispatcher", self.dispatcher)
         config = req("config", self.config)
         database = req("database", self.database)
-        user_repository = req("user_repository", self.user_repository)
+        moderator_service = req("moderator_service", self.moderator_service)
+        user_service = req("user_service", self.user_service)
         translator = req("translator", self.translator)
         message_sender = req("message_sender", self.message_sender)
 
@@ -187,7 +197,8 @@ class Application:
             build(
                 config=config,
                 database=database,
-                user_repository=user_repository,
+                moderator_service=moderator_service,
+                user_service=user_service,
                 translator=translator,
                 message_sender=message_sender,
                 moderation_executor=self.moderation_executor,
