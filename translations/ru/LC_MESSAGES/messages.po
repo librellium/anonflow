@@ -64,7 +64,7 @@ msgstr ""
 "секунд перед следующей попыткой."
 
 #: anonflow/bot/routers/info.py:20
-msgid "messages.command.info"
+msgid "messages.user.command_info"
 msgstr ""
 "Версия: {bot_version}\n"
 "Имя бота: {bot_username}"
@@ -77,22 +77,11 @@ msgstr ""
 "<blockquote>{text}</blockquote>"
 
 #: anonflow/bot/routers/start.py:21
-msgid "messages.command.start"
+msgid "messages.user.command_start"
 msgstr ""
 "Привет {username}!\n"
 "Ты можешь отправить мне сообщение, и я передам его в прикрепленный канал, не "
 "раскрывая твою личность."
-
-#: anonflow/bot/routers/support.py:23
-msgid "messages.command.support"
-msgstr ""
-"Вы вошли в режим поддержки. Все ваши дальнейшие сообщения "
-"будут отправляться администрации."
-
-#: anonflow/bot/routers/support.py:30
-msgid "messages.command.end_support"
-msgstr ""
-"Вы вышли из режима поддержки. Сообщения снова отправляются в канал."
 
 #: anonflow/bot/routers/text.py:55
 msgid "messages.channel.text"

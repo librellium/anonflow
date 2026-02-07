@@ -15,4 +15,4 @@ class InfoRouter(Router):
         @self.message(Command("info"))
         async def on_start(message: Message):
             _ = self.translator.get()
-            await message.answer(_("messages.command.info", message=message))
+            await message.answer(_("messages.user.command_info", message=message))

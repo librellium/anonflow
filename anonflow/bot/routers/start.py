@@ -18,4 +18,4 @@ class StartRouter(Router):
         async def on_start(message: Message):
             await self.user_service.add(message.chat.id)
             _ = self.translator.get()
-            await message.answer(_("messages.command.start", message=message))
+            await message.answer(_("messages.user.command_start", message=message))
