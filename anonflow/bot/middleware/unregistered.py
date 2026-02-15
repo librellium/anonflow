@@ -6,7 +6,7 @@ from anonflow.services import UserService
 from anonflow.translator import Translator
 
 
-class RegisteredMiddleware(BaseMiddleware):
+class UnregisteredMiddleware(BaseMiddleware):
     def __init__(self, user_service: UserService, translator: Translator):
         super().__init__()
 
