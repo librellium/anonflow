@@ -1,11 +1,11 @@
 from .blocked import BlockedMiddleware
-from .registered import RegisteredMiddleware
 from .subscription import SubscriptionMiddleware
 from .throttling import ThrottlingMiddleware
+from .unregistered import UnregisteredMiddleware
 
 __all__ = [
     "BlockedMiddleware",
-    "RegisteredMiddleware",
     "SubscriptionMiddleware",
-    "ThrottlingMiddleware"
+    "ThrottlingMiddleware",
+    "UnregisteredMiddleware"
 ]

@@ -1,15 +1,15 @@
 from .builder import build
 from .middleware import (
     BlockedMiddleware,
-    RegisteredMiddleware,
     SubscriptionMiddleware,
-    ThrottlingMiddleware
+    ThrottlingMiddleware,
+    UnregisteredMiddleware
 )
 
 __all__ = [
     "build",
     "BlockedMiddleware",
-    "RegisteredMiddleware",
     "SubscriptionMiddleware",
-    "ThrottlingMiddleware"
+    "ThrottlingMiddleware",
+    "UnregisteredMiddleware"
 ]
