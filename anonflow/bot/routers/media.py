@@ -1,6 +1,8 @@
 import asyncio
+import base64
 from asyncio import CancelledError
 from contextlib import suppress
+from io import BytesIO
 from typing import Dict, FrozenSet, List
 
 from aiogram import F, Router
@@ -38,6 +40,17 @@ class MediaRouter(Router):
         self.media_groups_tasks: Dict[str, asyncio.Task] = {}
         self.media_groups_lock = asyncio.Lock()
 
+    @staticmethod
+    async def get_b64image(message: Message):
+        if message.photo and message.bot:
+            photo = message.photo[-1]
+            file = await message.bot.get_file(photo.file_id)
+            if file:
+                buffer = BytesIO()
+                await message.bot.download(file, buffer)
+                buffer.seek(0)
+                return (base64.b64encode(buffer.read())).decode()
+
     def _can_send_media(self, msgs: List[Message]):
         return any(
             (msg.photo and "photo" in self.forwarding_types) or
@@ -62,7 +75,10 @@ class MediaRouter(Router):
                 content_group = ContentMediaGroup()
                 caption = next((msg.caption for msg in messages if msg.caption), "")
                 for message in messages:
-                    async for result in self.moderation_executor.process_message(message):
+                    async for result in self.moderation_executor.process(
+                        message.caption,
+                        await self.get_b64image(message)
+                    ):
                         if isinstance(result, ModerationDecisionResult):
                             moderation_approved = result.is_approved
                         await self.message_router.dispatch(result, message)
