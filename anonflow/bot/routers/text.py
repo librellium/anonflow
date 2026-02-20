@@ -36,7 +36,7 @@ class TextRouter(Router):
             ):
                 moderation_approved = False
 
-                async for result in self.moderation_executor.process_message(message):
+                async for result in self.moderation_executor.process(message.text):
                     if isinstance(result, ModerationDecisionResult):
                         moderation_approved = result.is_approved
                     await self.message_router.dispatch(result, message)
