@@ -51,6 +51,7 @@ class ModerationPlanner:
 
         self.rule_manager = rule_manager
 
+        self._enabled = False
         self._functions: List[Dict[str, Any]] = []
 
     @staticmethod
