@@ -31,7 +31,7 @@ class ModerationStartedResult(Result):
     pass
 
 @dataclass(frozen=True)
-class UserBlockedResult(Result):
+class UserBannedResult(Result):
     pass
 
 @dataclass(frozen=True)
@@ -52,7 +52,7 @@ Results: TypeAlias = Union[
     PostPreparedResult,
     ModerationDecisionResult,
     ModerationStartedResult,
-    UserBlockedResult,
+    UserBannedResult,
     UserSubscriptionRequiredResult,
     UserThrottledResult,
     UserNotRegisteredResult

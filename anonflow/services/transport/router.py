@@ -15,7 +15,7 @@ from .results import (
     ModerationDecisionResult,
     ModerationStartedResult,
     PostPreparedResult,
-    UserBlockedResult,
+    UserBannedResult,
     UserNotRegisteredResult,
     UserSubscriptionRequiredResult,
     UserThrottledResult
@@ -45,7 +45,7 @@ class MessageRouter:
             PostPreparedResult: self._handle_post_prepared,
             ModerationStartedResult: self._handle_moderation_started,
             ModerationDecisionResult: self._handle_moderation_decision,
-            UserBlockedResult: self._handle_user_blocked,
+            UserBannedResult: self._handle_user_banned,
             UserNotRegisteredResult: self._handle_user_not_registered,
             UserSubscriptionRequiredResult: self._handle_user_subscription_required,
             UserThrottledResult: self._handle_user_throttled
@@ -112,7 +112,7 @@ class MessageRouter:
                 _("messages.user.moderation_rejected", message=message)
             )
 
-    async def _handle_user_blocked(self, result: UserBlockedResult, message: Message, _):
+    async def _handle_user_banned(self, result: UserBannedResult, message: Message, _):
         await self.delivery_service.send_text(message.chat.id, _("messages.user.blocked", message))
 
     async def _handle_user_not_registered(self, result: UserNotRegisteredResult, message: Message, _):

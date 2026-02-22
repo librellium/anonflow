@@ -9,7 +9,7 @@ from anonflow.services import (
 )
 
 from anonflow.bot.middleware import (
-    BlockedMiddleware,
+    BannedMiddleware,
     NotRegisteredMiddleware,
     SubscriptionMiddleware,
     ThrottlingMiddleware
@@ -30,7 +30,7 @@ def build(
     middlewares = []
 
     middlewares.append(
-        BlockedMiddleware(
+        BannedMiddleware(
             message_router=message_router,
             moderator_service=moderator_service
         )
