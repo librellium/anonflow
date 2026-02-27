@@ -27,7 +27,7 @@ class ModeratorService:
     def _assert_not_self(actor_user_id: int, user_id: int):
         if actor_user_id == user_id:
             raise SelfActionError(
-                f"Moderator user_id={actor_user_id} cannot perform this action on themselves (target user_id={user_id})."
+                f"Moderator user_id={actor_user_id} cannot perform this action on themselves. Target user_id={user_id}."
             )
 
     async def add(self, actor_user_id: int, user_id: int):
@@ -58,7 +58,7 @@ class ModeratorService:
         if moderator:
             if moderator.is_root.value:
                 return True
-            return getattr(getattr(moderator, permission, None), "value", False)
+            return getattr(moderator, permission, False)
 
         return False
 
