@@ -49,7 +49,7 @@ class ModerationPlanner:
             "http_client": self._client
         }
 
-        self.rule_manager = rule_manager
+        self._rule_manager = rule_manager
 
         self._enabled = False
         self._functions: List[Dict[str, Any]] = []
@@ -111,6 +111,9 @@ class ModerationPlanner:
 
         return "\n".join(lines)
 
+    def _build_rules(self):
+        return "\n\n".join(self._rule_manager.get_rules())
+
     async def _run_omni(self, text: Optional[str] = None, image: Optional[str] = None):
         if self.is_backend_enabled("omni"):
             content = self._build_content(text, image)
@@ -130,6 +133,7 @@ class ModerationPlanner:
 
         if self.is_backend_enabled("gpt"):
             functions_prompt = self._build_functions_prompt(self._functions)
+            rules_prompt = self._build_rules()
 
             output = None
             for attempt in range(self._max_retries + 1):
@@ -153,12 +157,11 @@ class ModerationPlanner:
                                     - Do not omit required arguments.
                                     Available functions:
                                     {functions_prompt}
+
+                                    **RULES:**
+                                    {rules_prompt}
                                     '''
                                 ).strip(),
-                            },
-                            {
-                                "role": "system",
-                                "content": "\n\n".join(self.rule_manager.get_rules())
                             },
                             {
                                 "role": "user",
@@ -216,8 +219,8 @@ class ModerationPlanner:
             return
 
         self._functions.clear()
-        for func in functions:
-            sig = inspect.signature(func)
+        for function in functions:
+            sig = inspect.signature(function)
             args = {
                 name: (
                     getattr(param.annotation, "__name__", str(param.annotation))
@@ -227,7 +230,11 @@ class ModerationPlanner:
             }
 
             self._functions.append(
-                {"name": func.__name__, "args": args, "description": func.description or ""}
+                {
+                    "name": function.__name__,
+                    "args": args,
+                    "description": function.description or ""
+                }
             )
 
         function_names = self.get_function_names()

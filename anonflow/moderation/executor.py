@@ -1,27 +1,22 @@
 import asyncio
 import logging
 import textwrap
-from typing import AsyncGenerator, Literal, Optional
+from typing import AsyncGenerator, Optional, Literal
 
-from anonflow.services.transport.results import (
-    Results,
-    ModerationDecisionResult,
-    ModerationStartedResult
-)
-
+from .events import Event, ModerationDecisionEvent, ModerationStartedEvent
 from .planner import ModerationPlanner
 
 
 class ModerationExecutor:
-    def __init__(self, planner: ModerationPlanner):
+    def __init__(self, moderation_planner: ModerationPlanner):
         self._logger = logging.getLogger(__name__)
 
-        self.planner = planner
-        self.planner.set_functions(self.moderation_decision)
+        self._moderation_planner = moderation_planner
+        self._moderation_planner.set_functions(self.moderation_decision)
 
     def moderation_decision(self, status: Literal["approve", "reject"], reason: str):
         moderation_map = {"approve": True, "reject": False}
-        return ModerationDecisionResult(is_approved=moderation_map.get(status.lower(), False), reason=reason)
+        return ModerationDecisionEvent(is_approved=moderation_map.get(status.lower(), False), reason=reason)
     moderation_decision.description = textwrap.dedent( # type: ignore
         """
         Processes a message with a moderation decision by status and reason.
@@ -30,15 +25,15 @@ class ModerationExecutor:
         """
     ).strip()
 
-    async def process(self, text: Optional[str] = None, image: Optional[str] = None) -> AsyncGenerator[Results, None]:
-        yield ModerationStartedResult()
+    async def process(self, text: Optional[str] = None, image: Optional[str] = None) -> AsyncGenerator[Event, None]:
+        yield ModerationStartedEvent()
 
-        functions = await self.planner.plan(text, image)
-        function_names = self.planner.get_function_names()
+        functions = await self._moderation_planner.plan(text, image)
+        function_names = self._moderation_planner.get_function_names()
 
-        for func in functions:
-            func_name = func.get("name", "")
-            func_args = func.get("args", {})
+        for function in functions:
+            func_name = function.get("name", "")
+            func_args = function.get("args", {})
 
             method = getattr(self, func_name, None)
 
