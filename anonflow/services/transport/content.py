@@ -1,30 +1,38 @@
-from dataclasses import dataclass, field
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional
+from typing import Callable, Iterable, Optional
 
 
 class MediaType(str, Enum):
     PHOTO = "photo"
     VIDEO = "video"
 
-@dataclass(frozen=True)
-class ContentItem:
-    pass
+@dataclass
+class ContentItem(ABC):
+    @abstractmethod
+    def translate(self, translator: Callable): ...
 
-@dataclass(frozen=True)
-class ContentGroup:
-    pass
-
-@dataclass(frozen=True)
+@dataclass
 class ContentTextItem(ContentItem):
     text: str
 
-@dataclass(frozen=True)
+    def translate(self, translator: Callable):
+        self.text = translator(self.text)
+
+@dataclass
 class ContentMediaItem(ContentItem):
     type: MediaType
     file_id: str
     caption: Optional[str] = None
 
-@dataclass(frozen=True)
-class ContentMediaGroup(ContentGroup):
-    items: List[ContentMediaItem] = field(default_factory=list)
+    def translate(self, translator: Callable):
+        self.caption = translator(self.caption)
+
+class ContentGroup(list):
+    def __init__(self, items: Optional[Iterable[ContentItem]] = None):
+        return super().__init__(items or [])
+
+    def translate(self, translator: Callable):
+        for item in self:
+            item.translate(translator)

@@ -1,11 +1,10 @@
 from aiogram import Router
 
 from anonflow.config import Config
-from anonflow.moderation import ModerationExecutor
-from anonflow.services import MessageRouter, ModeratorService, UserService
+from anonflow.moderation import ModerationService
+from anonflow.services import ModeratorService, ResponsesRouter, UserService
 
 from anonflow.bot.routers import (
-    InfoRouter,
     MediaRouter,
     StartRouter,
     TextRouter
@@ -13,28 +12,27 @@ from anonflow.bot.routers import (
 
 def build(
     config: Config,
-    message_router: MessageRouter,
+    responses_router: ResponsesRouter,
     user_service: UserService,
     moderator_service: ModeratorService,
-    moderation_executor: ModerationExecutor,
+    moderation_service: ModerationService,
 ) -> Router:
     main_router = Router()
 
     routers = [
         StartRouter(
-            message_router=message_router,
+            responses_port=responses_router,
             user_service=user_service
         ),
-        InfoRouter(message_router=message_router),
         TextRouter(
-            message_router=message_router,
-            forwarding_types=config.forwarding.types,
-            moderation_executor=moderation_executor
+            responses_port=responses_router,
+            moderation_service=moderation_service,
+            forwarding_types=config.forwarding.types
         ),
         MediaRouter(
-            message_router=message_router,
+            responses_port=responses_router,
+            moderation_service=moderation_service,
             forwarding_types=config.forwarding.types,
-            moderation_executor=moderation_executor
         ),
     ]
 

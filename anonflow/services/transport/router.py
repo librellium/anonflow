@@ -1,27 +1,17 @@
 from itertools import chain
-from typing import Any, Callable, Dict, Tuple
+from typing import Tuple, Union
 
-from aiogram.types import ChatIdUnion, Message
+from aiogram.types import ChatIdUnion
 
+from anonflow.interfaces import PostResponsesPort, UserResponsesPort
 from anonflow.translator import Translator
 
-from .content import ContentMediaGroup, ContentTextItem
+from .content import ContentGroup, ContentItem
 from .delivery import DeliveryService
-from .results import (
-    Results,
-    CommandInfoResult,
-    CommandStartResult,
-    ModerationDecisionResult,
-    ModerationStartedResult,
-    PostPreparedResult,
-    UserBannedResult,
-    UserNotRegisteredResult,
-    UserSubscriptionRequiredResult,
-    UserThrottledResult
-)
+from .types import RequestContext
 
 
-class MessageRouter:
+class ResponsesRouter(PostResponsesPort, UserResponsesPort):
     def __init__(
         self,
         moderation_chat_ids: Tuple[ChatIdUnion],
@@ -29,107 +19,114 @@ class MessageRouter:
         delivery_service: DeliveryService,
         translator: Translator
     ):
-        self.moderation_chat_ids = moderation_chat_ids
-        self.publication_channel_ids = publication_channel_ids
-        self.delivery_service = delivery_service
-        self.translator = translator
+        self._moderation_chat_ids = moderation_chat_ids
+        self._publication_channel_ids = publication_channel_ids
+        self._delivery_service = delivery_service
+        self._translator = translator
 
-        self._handlers: Dict[Any, Callable] = {
-            CommandInfoResult: self._handle_command_info,
-            CommandStartResult: self._handle_command_start,
-            PostPreparedResult: self._handle_post_prepared,
-            ModerationStartedResult: self._handle_moderation_started,
-            ModerationDecisionResult: self._handle_moderation_decision,
-            UserBannedResult: self._handle_user_banned,
-            UserNotRegisteredResult: self._handle_user_not_registered,
-            UserSubscriptionRequiredResult: self._handle_user_subscription_required,
-            UserThrottledResult: self._handle_user_throttled
-        }
-
-    async def _handle_command_info(self, result: CommandInfoResult, message: Message, _):
-        await self.delivery_service.send_text(message.chat.id, _("messages.user.command_info", message=message))
-
-    async def _handle_command_start(self, result: CommandStartResult, message: Message, _):
-        await self.delivery_service.send_text(message.chat.id, _("messages.user.command_start", message=message))
-
-    async def _handle_post_prepared(self, result: PostPreparedResult, message: Message, _):
-        chat_ids = (
-            chain(self.moderation_chat_ids, self.publication_channel_ids)
-            if result.moderation_approved
-            else iter(self.moderation_chat_ids)
-        )
-
-        content = result.content
-        for chat_id in chat_ids:
-            if isinstance(content, ContentTextItem):
-                await self.delivery_service.send_text(chat_id, _("messages.channel.text", text=content.text))
-            elif isinstance(content, ContentMediaGroup):
-                items = content.items
-                if len(items) > 1:
-                    await self.delivery_service.send_media_group(chat_id, content)
-                elif len(items) == 1:
-                    await self.delivery_service.send_media(chat_id, items[0])
-
-        if result.moderation_approved:
-            await message.answer(_("messages.user.moderation_approved", message=message))
-
-    async def _handle_moderation_started(self, result: ModerationStartedResult, message: Message, _):
-        await self.delivery_service.send_text(
-            message.chat.id,
-            _("messages.user.moderation_started", message=message)
-        )
-
-    async def _handle_moderation_decision(self, result: ModerationDecisionResult, message: Message, _):
-        for chat_id in self.moderation_chat_ids:
-            if result.is_approved:
-                await self.delivery_service.send_text(
+    async def post_moderation_decision(
+        self,
+        context: RequestContext,
+        is_approved: bool,
+        reason: str
+    ):
+        _ = await self._translator.get(context.user_language)
+        for chat_id in self._moderation_chat_ids:
+            if is_approved:
+                await self._delivery_service.send_text(
                     chat_id,
                     _(
                         "messages.staff.moderation_approved",
-                        message=message,
-                        explanation=result.reason,
+                        reason=reason,
                     )
                 )
             else:
-                await self.delivery_service.send_text(
+                await self._delivery_service.send_text(
                     chat_id,
                     _(
                         "messages.staff.moderation_rejected",
-                        message=message,
-                        explanation=result.reason,
+                        reason=reason,
                     )
                 )
 
-        if not result.is_approved:
-            await self.delivery_service.send_text(
-                message.chat.id,
-                _("messages.user.moderation_rejected", message=message)
+        if not is_approved:
+            await self._delivery_service.send_text(
+                context.chat_id,
+                _("messages.user.moderation_rejected")
             )
 
-    async def _handle_user_banned(self, result: UserBannedResult, message: Message, _):
-        await self.delivery_service.send_text(message.chat.id, _("messages.user.banned", message))
-
-    async def _handle_user_not_registered(self, result: UserNotRegisteredResult, message: Message, _):
-        await self.delivery_service.send_text(message.chat.id, _("messages.user.not_registered", message))
-
-    async def _handle_user_subscription_required(self, result: UserSubscriptionRequiredResult, message: Message, _):
-        await self.delivery_service.send_text(message.chat.id, _("messages.user.subscription_required", message))
-
-    async def _handle_user_throttled(self, result: UserThrottledResult, message: Message, _):
-        await self.delivery_service.send_text(
-            message.chat.id,
-            _(
-                "messages.user.throttled",
-                message,
-                remaining=result.remaining_time
-            )
+    async def post_moderation_started(self, context: RequestContext):
+        _ = await self._translator.get(context.user_language)
+        await self._delivery_service.send_text(
+            context.chat_id,
+            _("messages.user.moderation_started")
         )
 
-    async def dispatch(self, result: Results, message: Message):
-        _ = self.translator.get()
+    async def post_prepared(
+        self,
+        context: RequestContext,
+        content: Union[ContentItem, ContentGroup],
+        is_approved: bool
+    ):
+        _ = await self._translator.get(context.user_language)
 
-        handler = self._handlers.get(type(result))
-        if handler is None:
-            return
+        chat_ids = (
+            chain(self._moderation_chat_ids, self._publication_channel_ids)
+            if is_approved else iter(self._moderation_chat_ids)
+        )
 
-        await handler(result, message, _)
+        translator = lambda t: _(
+            "messages.channel.post",
+            text=t
+        )
+        content.translate(translator)
+
+        for chat_id in chat_ids:
+            await self._delivery_service.send_content(
+                chat_id, content
+            )
+
+        if is_approved:
+            await self._delivery_service.send_text(
+                context.chat_id,
+                _("messages.user.moderation_approved")
+            )
+
+    async def user_banned(self, context: RequestContext):
+        _ = await self._translator.get(context.user_language)
+        await self._delivery_service.send_text(
+            context.chat_id,
+            _("messages.user.banned")
+        )
+
+    async def user_not_registered(self, context: RequestContext):
+        _ = await self._translator.get(context.user_language)
+        await self._delivery_service.send_text(
+            context.chat_id,
+            _("messages.user.not_registered")
+        )
+
+    async def user_start(self, context: RequestContext):
+        _ = await self._translator.get(context.user_language)
+        await self._delivery_service.send_text(
+            context.chat_id,
+            _("messages.user.command_start")
+        )
+
+    async def user_subscription_required(self, context: RequestContext):
+        _ = await self._translator.get(context.user_language)
+        await self._delivery_service.send_text(
+            context.chat_id,
+            _("messages.user.subscription_required")
+        )
+
+    async def user_throttled(self, context: RequestContext, remaining_time: int):
+        _ = await self._translator.get(context.user_language)
+        await self._delivery_service.send_text(
+            context.chat_id,
+            _(
+                "messages.user.throttled",
+                n=remaining_time,
+                remaining_time=remaining_time
+            )
+        )

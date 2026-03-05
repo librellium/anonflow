@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
@@ -15,7 +17,7 @@ class UserRepository(BaseRepository):
             model_args={"user_id": user_id}
         )
 
-    async def get(self, session: AsyncSession, user_id: int):
+    async def get(self, session: AsyncSession, user_id: int) -> Optional[User]:
         return await super()._get(
             session,
             filters={"user_id": user_id},

@@ -2,22 +2,22 @@ from aiogram import Router
 from aiogram.filters import CommandStart
 from aiogram.types import Message
 
-from anonflow.services import MessageRouter, UserService
-from anonflow.services.transport.results import CommandStartResult
+from anonflow.services import UserService
+from anonflow.interfaces import UserResponsesPort
+from anonflow.services.transport.types import RequestContext
 
 
 class StartRouter(Router):
-    def __init__(self, message_router: MessageRouter, user_service: UserService):
+    def __init__(self, responses_port: UserResponsesPort, user_service: UserService):
         super().__init__()
-        self.message_router = message_router
-        self.user_service = user_service
+
+        self._responses_port = responses_port
+        self._user_service = user_service
+
+    async def _on_start(self, message: Message, user_language: str):
+        if message.from_user:
+            await self._user_service.add(message.from_user.id)
+        await self._responses_port.user_start(RequestContext(message.chat.id, user_language))
 
     def setup(self):
-        @self.message(CommandStart())
-        async def on_start(message: Message):
-            if message.from_user:
-                await self.user_service.add(message.from_user.id)
-            await self.message_router.dispatch(
-                CommandStartResult(),
-                message
-            )
+        self.message.register(self._on_start, CommandStart())

@@ -6,10 +6,10 @@
 msgid ""
 msgstr ""
 "Project-Id-Version:  0.5.0\n"
-"Report-Msgid-Bugs-To: 246878136+librellium@users.noreply.github.com\n"
+"Report-Msgid-Bugs-To: support@librellium.space\n"
 "POT-Creation-Date: 2026-02-22 12:26+0500\n"
 "PO-Revision-Date: 2026-02-22 12:28+0500\n"
-"Last-Translator: Librellium 246878136+librellium@users.noreply.github.com\n"
+"Last-Translator: Librellium support@librellium.space\n"
 "Language-Team: Russian <Librellium>, https://librellium.space\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
@@ -19,72 +19,64 @@ msgstr ""
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: anonflow/services/transport/router.py:50
-msgid "messages.user.command_info"
-msgstr ""
-"<b>Anonflow</b> v{bot_version}\n"
-"<b>Имя бота</b>: {bot_username}\n"
-"<b>Ваш ID</b>: {chat_id} / {user_id}\n"
-"<b>Ваше имя</b>: {full_name}\n"
-"<b>Ваш username</b>: {username}"
-
-#: anonflow/services/transport/router.py:53
-msgid "messages.user.command_start"
-msgstr ""
-"<b>Привет {username}!</b>\n"
-"Ты можешь отправить мне сообщение, и я передам его в прикрепленный "
-"канал, не раскрывая твою личность."
-
-#: anonflow/services/transport/router.py:65
-msgid "messages.channel.text"
-msgstr ""
-"<b>Сообщение из предложки</b>\n"
-"\n"
-"<blockquote>{text}</blockquote>"
-
-#: anonflow/services/transport/router.py:74
-msgid "messages.user.moderation_approved"
-msgstr "Сообщение успешно отправлено!"
-
-#: anonflow/services/transport/router.py:79
-msgid "messages.user.moderation_started"
-msgstr "Сообщение отправлено на модерацию, ожидайте..."
-
-#: anonflow/services/transport/router.py:88
+#: anonflow/services/transport/router.py:39
 msgid "messages.staff.moderation_approved"
 msgstr ""
-"Сообщение ниже было отправлено.\n"
+"<b>Сообщение ниже было отправлено.</b>\n"
 "\n"
-"Объяснение: {explanation}"
+"Причина: {reason}"
 
-#: anonflow/services/transport/router.py:97
+#: anonflow/services/transport/router.py:47
 msgid "messages.staff.moderation_rejected"
 msgstr ""
-"Сообщение ниже было отклонено.\n"
+"<b>Сообщение ниже было отклонено.</b>\n"
 "\n"
-"Объяснение: {explanation}"
+"Причина: {reason}"
 
-#: anonflow/services/transport/router.py:106
+#: anonflow/services/transport/router.py:55
 msgid "messages.user.moderation_rejected"
 msgstr ""
 "Извините, но сообщение не прошло модерацию. "
 "Оно было отправлено на ручную проверку."
 
-#: anonflow/services/transport/router.py:110
+#: anonflow/services/transport/router.py:62
+msgid "messages.user.moderation_started"
+msgstr "Сообщение отправлено на модерацию, ожидайте..."
+
+#: anonflow/services/transport/router.py:79
+msgid "messages.channel.post"
+msgstr ""
+"<b>Сообщение из предложки</b>\n"
+"\n"
+"<blockquote>{text}</blockquote>"
+
+#: anonflow/services/transport/router.py:92
+msgid "messages.user.moderation_approved"
+msgstr "Сообщение успешно отправлено!"
+
+#: anonflow/services/transport/router.py:99
 msgid "messages.user.banned"
 msgstr "Извините, но вы были заблокированы. Отправка сообщений недоступна."
 
-#: anonflow/services/transport/router.py:113
+#: anonflow/services/transport/router.py:106
 msgid "messages.user.not_registered"
 msgstr "Для продолжения пропишите /start."
 
-#: anonflow/services/transport/router.py:116
+#: anonflow/services/transport/router.py:113
+msgid "messages.user.command_start"
+msgstr ""
+"<b>Привет!</b>\n"
+"Ты можешь отправить мне сообщение, и я передам его в прикрепленный "
+"канал, не раскрывая твою личность."
+
+#: anonflow/services/transport/router.py:120
 msgid "messages.user.subscription_required"
 msgstr "Вам нужно быть участником канала, чтобы отправлять сообщения!"
 
-#: anonflow/services/transport/router.py:122
+#: anonflow/services/transport/router.py:128
 msgid "messages.user.throttled"
-msgstr ""
-"Вы уже недавно отправляли сообщение! Пожалуйста, подождите {remaining} "
-"секунд перед следующей попыткой."
+msgid_plural "messages.user.throttled"
+msgstr[0] "Вы уже недавно отправляли сообщение! Пожалуйста, подождите {remaining_time} секунду перед следующей попыткой."
+msgstr[1] "Вы уже недавно отправляли сообщение! Пожалуйста, подождите {remaining_time} секунды перед следующей попыткой."
+msgstr[2] "Вы уже недавно отправляли сообщение! Пожалуйста, подождите {remaining_time} секунд перед следующей попыткой."
 
