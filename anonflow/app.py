@@ -7,7 +7,7 @@ from aiogram.client.bot import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from anonflow import __version_str__
-from anonflow.bot.builders.middleware import build as build_middleware
+from anonflow.bot.builders.middlewares import build as build_middlewares
 from anonflow.bot.builders.routers import build as build_routers
 from anonflow.config import Config
 from anonflow.database import (
@@ -19,12 +19,13 @@ from anonflow.database import (
 from anonflow.moderation import (
     ModerationExecutor,
     ModerationPlanner,
+    ModerationService,
     RuleManager
 )
 from anonflow.services import (
     DeliveryService,
-    MessageRouter,
     ModeratorService,
+    ResponsesRouter,
     UserService
 )
 from anonflow.translator import Translator
@@ -52,16 +53,18 @@ class Application:
     def __init__(self):
         self._logger = logging.getLogger(__name__)
 
-        self.bot: Optional[Bot] = None
-        self.dispatcher: Optional[Dispatcher] = None
-        self.config: Optional[Config] = None
-        self.database: Optional[Database] = None
-        self.moderator_service: Optional[ModeratorService] = None
-        self.user_service: Optional[UserService] = None
-        self.translator: Optional[Translator] = None
-        self.moderation_planner: Optional[ModerationPlanner] = None
-        self.moderation_executor: Optional[ModerationExecutor] = None
-        self.message_router: Optional[MessageRouter] = None
+        self._bot: Optional[Bot] = None
+        self._dispatcher: Optional[Dispatcher] = None
+        self._config: Optional[Config] = None
+        self._database: Optional[Database] = None
+        self._moderator_service: Optional[ModeratorService] = None
+        self._user_service: Optional[UserService] = None
+        self._translator: Optional[Translator] = None
+        self._rule_manager: Optional[RuleManager] = None
+        self._moderation_planner: Optional[ModerationPlanner] = None
+        self._moderation_executor: Optional[ModerationExecutor] = None
+        self._moderation_service: Optional[ModerationService] = None
+        self._responses_router: Optional[ResponsesRouter] = None
 
     def _init_config(self):
         config_filepath = paths.CONFIG_FILEPATH
@@ -70,10 +73,10 @@ class Application:
             Config().save(config_filepath)
             raise RuntimeError("Config file was just created. Please fill it out and restart the application.")
 
-        self.config = Config.load(config_filepath)
+        self._config = Config.load(config_filepath)
 
     def _init_logging(self):
-        with require(self, "config") as config:
+        with require(self, "_config") as config:
             logging.basicConfig(
                 format=config.logging.fmt,
                 datefmt=config.logging.date_fmt,
@@ -81,54 +84,97 @@ class Application:
             )
 
     async def _init_database(self):
-        with require(self, "config") as config:
-            self.database = Database(config.get_database_url())
-            await self.database.init()
+        with require(self, "_config") as config:
+            self._database = Database(config.get_database_url())
+            await self._database.init()
 
-            self.moderator_service = ModeratorService(
-                self.database,
+            self._moderator_service = ModeratorService(
+                self._database,
                 BanRepository(),
                 ModeratorRepository()
             )
-            await self.moderator_service.init()
-            self.user_service = UserService(
-                self.database,
+            await self._moderator_service.init()
+            self._user_service = UserService(
+                self._database,
                 UserRepository()
             )
 
     def _init_bot(self):
-        with require(self, "config") as config:
+        with require(self, "_config") as config:
             bot_token = config.bot.token
             if not bot_token:
                 raise ValueError("bot.token is required and cannot be empty")
 
-            self.bot = Bot(
+            self._bot = Bot(
                 token=bot_token.get_secret_value(),
                 default=DefaultBotProperties(parse_mode="HTML")
             )
-            self.dispatcher = Dispatcher(storage=MemoryStorage())
+            self._dispatcher = Dispatcher(storage=MemoryStorage())
 
-    async def _init_translator(self):
-        self.translator = Translator(translations_dir=paths.TRANSLATIONS_DIR)
-        await self.translator.init(self.bot)
+    def _init_translator(self):
+        self._translator = Translator(translations_dir=paths.TRANSLATIONS_DIR)
 
     def _init_transport(self):
         with require(
-            self, "bot", "config", "translator"
+            self, "_bot", "_config", "_translator"
         ) as (bot, config, translator):
-            self.message_router = MessageRouter(
+            self._responses_router = ResponsesRouter(
                 moderation_chat_ids=config.forwarding.moderation_chat_ids,
                 publication_channel_ids=config.forwarding.publication_channel_ids,
                 delivery_service=DeliveryService(bot),
                 translator=translator
             )
 
+    def _init_moderation(self):
+        with require(self, "_config", "_responses_router") as (config, responses_router):
+            self._rule_manager = RuleManager(rules_dir=paths.RULES_DIR)
+            self._rule_manager.reload()
+
+            api_key = config.openai.api_key
+            if not api_key and config.moderation.enabled:
+                raise ValueError("openai.api_key is required and cannot be empty")
+
+            base_url = config.openai.base_url
+            proxy = config.openai.proxy
+
+            self._moderation_planner = ModerationPlanner(
+                api_key=api_key.get_secret_value() if api_key else None,
+                gpt_model=config.moderation.model,
+                backends=config.moderation.backends,
+                rule_manager=self._rule_manager,
+                base_url=str(base_url) if base_url else None,
+                proxy=str(proxy) if proxy else None,
+                timeout=config.openai.timeout,
+                max_retries=config.openai.max_retries
+            )
+            self._moderation_planner.set_enabled(config.moderation.enabled)
+            self._moderation_executor = ModerationExecutor(self._moderation_planner)
+
+            self._moderation_service = ModerationService(
+                responses_router,
+                self._moderation_executor
+            )
+
+    def _init_routers(self):
+        with require(
+            self, "_dispatcher", "_config", "_responses_router", "_user_service", "_moderator_service", "_moderation_service"
+        ) as (dispatcher, config, responses_router, user_service, moderator_service, moderation_service):
+            dispatcher.include_router(
+                build_routers(
+                    config=config,
+                    responses_router=responses_router,
+                    user_service=user_service,
+                    moderator_service=moderator_service,
+                    moderation_service=moderation_service,
+                )
+            )
+
     def _init_middleware(self):
         with require(
-            self, "dispatcher", "config", "message_router", "user_service", "moderator_service"
-        ) as (dispatcher, config, message_router, user_service, moderator_service):
-            middlewares = build_middleware(
-                message_router=message_router,
+            self, "_dispatcher", "_config", "_responses_router", "_user_service", "_moderator_service"
+        ) as (dispatcher, config, responses_router, user_service, moderator_service):
+            middlewares = build_middlewares(
+                responses_router=responses_router,
                 user_service=user_service,
                 moderator_service=moderator_service,
                 subscription_requirement=config.behavior.subscription_requirement.enabled,
@@ -141,77 +187,34 @@ class Application:
             for middleware in middlewares:
                 dispatcher.update.middleware(middleware)
 
-    def _init_moderation(self):
-        with require(self, "config") as config:
-            self.rule_manager = RuleManager(rules_dir=paths.RULES_DIR)
-            self.rule_manager.reload()
-
-            api_key = config.openai.api_key
-            if not api_key and config.moderation.enabled:
-                raise ValueError("openai.api_key is required and cannot be empty")
-
-            base_url = config.openai.base_url
-            proxy = config.openai.proxy
-
-            self.moderation_planner = ModerationPlanner(
-                api_key=api_key.get_secret_value() if api_key else None,
-                gpt_model=config.moderation.model,
-                backends=config.moderation.backends,
-                rule_manager=self.rule_manager,
-                base_url=str(base_url) if base_url else None,
-                proxy=str(proxy) if proxy else None,
-                timeout=config.openai.timeout,
-                max_retries=config.openai.max_retries
-            )
-            self.moderation_planner.set_enabled(config.moderation.enabled)
-            self.moderation_executor = ModerationExecutor(planner=self.moderation_planner)
-
     async def init(self):
         self._init_config()
         self._init_logging()
         await self._init_database()
         self._init_bot()
-        await self._init_translator()
+        self._init_translator()
         self._init_transport()
-        self._init_middleware()
         self._init_moderation()
+        self._init_routers()
+        self._init_middleware()
 
     async def run(self):
         try:
             await self.init()
-        except Exception:
-            if self.bot:
-                await self.bot.session.close()
-            if self.database:
-                await self.database.close()
-            if self.moderation_planner:
-                await self.moderation_planner.close()
+        except:
+            if self._bot:
+                await self._bot.session.close()
+            if self._database:
+                await self._database.close()
+            if self._moderation_planner:
+                await self._moderation_planner.close()
             raise
 
         self._logger.info(f"Anonflow v{__version_str__} has been successfully initialized.")
 
         with require(
-            self,
-            "bot", "dispatcher", "config",
-            "database", "message_router",
-            "user_service", "moderator_service",
-            "moderation_planner", "moderation_executor"
-        ) as (
-            bot, dispatcher, config,
-            database, message_router,
-            user_service, moderator_service,
-            moderation_planner, moderation_executor
-        ):
-            dispatcher.include_router(
-                build_routers(
-                    config=config,
-                    message_router=message_router,
-                    user_service=user_service,
-                    moderator_service=moderator_service,
-                    moderation_executor=moderation_executor,
-                )
-            )
-
+            self, "_bot", "_dispatcher", "_database", "_moderation_planner"
+        ) as (bot, dispatcher, database, moderation_planner):
             try:
                 await dispatcher.start_polling(bot)
             finally:
