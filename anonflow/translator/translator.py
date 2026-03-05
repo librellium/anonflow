@@ -1,75 +1,45 @@
+import asyncio
 import gettext
 from collections import defaultdict
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal, Optional
-
-from aiogram import Bot
-from aiogram.types import Message
-
-from anonflow import __version_str__
+from typing import Optional
 
 
 class Translator:
     def __init__(self, translations_dir: Path):
-        self.translations_dir = translations_dir
-
-        self.bot = None
+        self._translations_dir = translations_dir
 
     @staticmethod
     @lru_cache
-    def _get_translator(lang: str, translations_dir: Path):
-        translator = gettext.translation(
+    def _get_translation(lang: str, translations_dir: Path):
+        translation = gettext.translation(
             "messages",
             translations_dir,
             languages=[lang],
             fallback=True
         )
-        return translator
+        return translation
 
-    def format(self, s: str, message: Optional[Message], **extra):
-        bot = self.bot
-
-        msg_context = {}
-        if isinstance(message, Message):
-            user = message.from_user
-            chat = message.chat
-
-            first_name = getattr(user, "first_name", "")
-            last_name = getattr(user, "last_name", "")
-
-            msg_context = {
-                "chat_id": getattr(chat, "id", ""),
-                "user_id": getattr(user, "id", ""),
-                "first_name": first_name,
-                "last_name": last_name,
-                "full_name": " ".join(filter(None, (first_name, last_name))),
-                "username": getattr(user, "username", ""),
-                "bot_first_name": getattr(bot, "first_name", ""),
-                "bot_last_name": getattr(bot, "last_name", ""),
-                "bot_username": getattr(bot, "username", ""),
-                "bot_version": __version_str__
-            }
-
+    @staticmethod
+    def _format(s: str, **context):
         return s.format_map(
             defaultdict(
                 str,
-                msg_context | extra
+                context
             )
         )
 
-    def get(self, lang: Literal["ru"] = "ru"):
-        translator = self._get_translator(lang, self.translations_dir)
+    async def get(self, lang: str = "ru"):
+        translator = await asyncio.to_thread(self._get_translation, lang, self._translations_dir)
 
-        def _(msgid: str, message: Optional[Message] = None, **extra):
-            return self.format(
-                translator.gettext(msgid),
-                message=message,
-                **extra
+        def _(msgid1: str, msgid2: Optional[str] = None, n: Optional[int] = None, **context):
+            return self._format(
+                (
+                    translator.ngettext(msgid1, msgid2 if msgid2 is not None else msgid1, n)
+                    if n is not None else translator.gettext(msgid1)
+                ),
+                **context
             )
 
         return _
-
-    async def init(self, bot: Optional[Bot]):
-        if bot:
-            self.bot = await bot.get_me()
