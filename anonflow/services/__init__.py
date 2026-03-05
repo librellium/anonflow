@@ -1,11 +1,10 @@
-from .accounts.moderator import ModeratorService
-from .accounts.user import UserService
-from .transport.delivery import DeliveryService
-from .transport.router import MessageRouter
+from .moderator import ModeratorService
+from .transport import DeliveryService, ResponsesRouter
+from .user import UserService
 
 __all__ = [
     "ModeratorService",
-    "UserService",
     "DeliveryService",
-    "MessageRouter",
+    "ResponsesRouter",
+    "UserService",
 ]

@@ -2,7 +2,7 @@ from dataclasses import dataclass, asdict
 from enum import Enum
 
 
-@dataclass(frozen=True)
+@dataclass
 class ModeratorPermissions:
     can_approve_posts: bool = False
     can_manage_bans: bool = False
