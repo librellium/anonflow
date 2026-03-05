@@ -3,20 +3,21 @@ from typing import Tuple
 from aiogram.types import ChatIdUnion
 
 from anonflow.services import (
-    MessageRouter,
     ModeratorService,
+    ResponsesRouter,
     UserService
 )
 
-from anonflow.bot.middleware import (
+from anonflow.bot.middlewares import (
     BannedMiddleware,
+    LanguageMiddleware,
     NotRegisteredMiddleware,
     SubscriptionMiddleware,
     ThrottlingMiddleware
 )
 
 def build(
-    message_router: MessageRouter,
+    responses_router: ResponsesRouter,
     user_service: UserService,
     moderator_service: ModeratorService,
 
@@ -30,8 +31,14 @@ def build(
     middlewares = []
 
     middlewares.append(
+        LanguageMiddleware(
+            user_service=user_service
+        )
+    )
+
+    middlewares.append(
         BannedMiddleware(
-            message_router=message_router,
+            responses_port=responses_router,
             moderator_service=moderator_service
         )
     )
@@ -39,14 +46,14 @@ def build(
     if subscription_requirement:
         middlewares.append(
             SubscriptionMiddleware(
-                channel_ids=subscription_channel_ids,
-                message_router=message_router
+                responses_port=responses_router,
+                channel_ids=subscription_channel_ids
             )
         )
 
     middlewares.append(
         NotRegisteredMiddleware(
-            message_router=message_router,
+            responses_port=responses_router,
             user_service=user_service
         )
     )
@@ -54,7 +61,7 @@ def build(
     if throttling:
         middlewares.append(
             ThrottlingMiddleware(
-                message_router=message_router,
+                responses_port=responses_router,
                 delay=throttling_delay,
                 allowed_chat_ids=throttling_allowed_chat_ids
             )
