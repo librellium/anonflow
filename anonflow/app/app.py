@@ -1,16 +1,11 @@
 import logging
-from contextlib import contextmanager
-from typing import Any, Generator, Optional
+from typing import Optional
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.bot import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from anonflow import __version_str__
-from anonflow.bot.builders import (
-    build_middlewares,
-    build_routers
-)
+from anonflow import __version_str__, paths
 from anonflow.bot.transport import (
     DeliveryService,
     ResponsesRouter
@@ -34,24 +29,12 @@ from anonflow.services import (
 )
 from anonflow.translator import Translator
 
-from . import paths
+from .builders import (
+    build_middlewares,
+    build_routers
+)
+from .helpers import require
 
-
-class NotInitializedError(RuntimeError): ...
-
-@contextmanager
-def require(obj, *names) -> Generator[Any, Any, None]:
-    values = []
-    for name in names:
-        value = getattr(obj, name, None)
-        if value is None:
-            raise NotInitializedError(name)
-        values.append(value)
-
-    if len(values) == 1:
-        yield values[0]
-    else:
-        yield tuple(values)
 
 class Application:
     def __init__(self):
