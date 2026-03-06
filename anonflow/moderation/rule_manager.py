@@ -17,6 +17,9 @@ class RuleManager:
 
         self._rules.clear()
         for rule_filename in listdir(self._rules_dir):
+            if rule_filename.endswith(".example"):
+                continue
+
             rule_filepath = Path(self._rules_dir / rule_filename).resolve()
             with rule_filepath.open(encoding="utf-8") as rule_file:
                 rule = rule_file.read()
