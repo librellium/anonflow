@@ -4,7 +4,7 @@ from aiogram.types import Message
 
 from anonflow.services import UserService
 from anonflow.interfaces import UserResponsesPort
-from anonflow.services.transport.types import RequestContext
+from anonflow.bot.transport.types import RequestContext
 
 
 class StartRouter(Router):

@@ -1,10 +1,10 @@
 from typing import Protocol, Union
 
-from anonflow.services.transport.content import (
+from anonflow.bot.transport.content import (
     ContentGroup,
     ContentItem
 )
-from anonflow.services.transport.types import RequestContext
+from anonflow.bot.transport.types import RequestContext
 
 
 class PostResponsesPort(Protocol):

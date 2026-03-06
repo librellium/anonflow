@@ -7,8 +7,8 @@ from aiogram.types import Message
 from anonflow.config.models import ForwardingType
 from anonflow.interfaces import PostResponsesPort
 from anonflow.moderation import ModerationService
-from anonflow.services.transport.content import ContentTextItem
-from anonflow.services.transport.types import RequestContext
+from anonflow.bot.transport.content import ContentTextItem
+from anonflow.bot.transport.types import RequestContext
 
 
 class TextRouter(Router):
