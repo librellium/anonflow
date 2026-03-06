@@ -1,12 +1,12 @@
 from aiogram import BaseMiddleware
 from aiogram.types import Message
 
+from anonflow.bot.transport.types import RequestContext
 from anonflow.interfaces import UserResponsesPort
 from anonflow.services import ModeratorService
-from anonflow.services.transport.types import RequestContext
 
 
-class BannedMiddleware(BaseMiddleware):
+class UserBannedMiddleware(BaseMiddleware):
     def __init__(self, responses_port: UserResponsesPort, moderator_service: ModeratorService):
         super().__init__()
 
