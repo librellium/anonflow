@@ -55,12 +55,14 @@ class ModeratorService:
 
     async def _can(self, session: AsyncSession, actor_user_id: int, permission: ModeratorPermission) -> bool:
         moderator = await self._moderator_repository.get(session, actor_user_id)
-        if moderator:
-            if moderator.is_root.value:
-                return True
-            return getattr(moderator, permission, False)
 
-        return False
+        if not moderator:
+            return False
+
+        if bool(moderator.is_root):
+            return True
+
+        return getattr(moderator, permission, False)
 
     async def can(self, actor_user_id: int, permission: ModeratorPermission):
         async with self._database.get_session() as session:
