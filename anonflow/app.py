@@ -7,8 +7,14 @@ from aiogram.client.bot import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from anonflow import __version_str__
-from anonflow.bot.builders.middlewares import build as build_middlewares
-from anonflow.bot.builders.routers import build as build_routers
+from anonflow.bot.builders import (
+    build_middlewares,
+    build_routers
+)
+from anonflow.bot.transport import (
+    DeliveryService,
+    ResponsesRouter
+)
 from anonflow.config import Config
 from anonflow.database import (
     BanRepository,
@@ -23,9 +29,7 @@ from anonflow.moderation import (
     RuleManager
 )
 from anonflow.services import (
-    DeliveryService,
     ModeratorService,
-    ResponsesRouter,
     UserService
 )
 from anonflow.translator import Translator
@@ -174,14 +178,10 @@ class Application:
             self, "_dispatcher", "_config", "_responses_router", "_user_service", "_moderator_service"
         ) as (dispatcher, config, responses_router, user_service, moderator_service):
             middlewares = build_middlewares(
+                config=config,
                 responses_router=responses_router,
                 user_service=user_service,
-                moderator_service=moderator_service,
-                subscription_requirement=config.behavior.subscription_requirement.enabled,
-                subscription_channel_ids=config.behavior.subscription_requirement.channel_ids,
-                throttling=config.behavior.throttling.enabled,
-                throttling_delay=config.behavior.throttling.delay,
-                throttling_allowed_chat_ids=config.forwarding.moderation_chat_ids
+                moderator_service=moderator_service
             )
 
             for middleware in middlewares:

@@ -1,16 +1,13 @@
 from aiogram import Router
 
+from anonflow.bot.routers import MediaRouter, StartRouter, TextRouter
+from anonflow.bot.transport import ResponsesRouter
 from anonflow.config import Config
 from anonflow.moderation import ModerationService
-from anonflow.services import ModeratorService, ResponsesRouter, UserService
+from anonflow.services import ModeratorService, UserService
 
-from anonflow.bot.routers import (
-    MediaRouter,
-    StartRouter,
-    TextRouter
-)
 
-def build(
+def build_routers(
     config: Config,
     responses_router: ResponsesRouter,
     user_service: UserService,

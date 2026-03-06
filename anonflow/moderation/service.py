@@ -1,7 +1,7 @@
 from typing import Optional
 
 from anonflow.interfaces import PostResponsesPort
-from anonflow.services.transport.types import RequestContext
+from anonflow.bot.transport.types import RequestContext
 
 from .events import ModerationDecisionEvent, ModerationStartedEvent
 from .executor import ModerationExecutor

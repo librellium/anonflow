@@ -1,69 +1,61 @@
-from typing import Tuple
-
-from aiogram.types import ChatIdUnion
-
-from anonflow.services import (
-    ModeratorService,
-    ResponsesRouter,
-    UserService
+from anonflow.bot.middlewares.user import (
+    UserBannedMiddleware,
+    UserContextMiddleware,
+    UserLanguageMiddleware,
+    UserNotRegisteredMiddleware,
+    UserSubscriptionMiddleware,
+    UserThrottlingMiddleware
 )
+from anonflow.bot.transport import ResponsesRouter
+from anonflow.config import Config
+from anonflow.services import ModeratorService, UserService
 
-from anonflow.bot.middlewares import (
-    BannedMiddleware,
-    LanguageMiddleware,
-    NotRegisteredMiddleware,
-    SubscriptionMiddleware,
-    ThrottlingMiddleware
-)
 
-def build(
+def build_middlewares(
+    config: Config,
     responses_router: ResponsesRouter,
     user_service: UserService,
     moderator_service: ModeratorService,
-
-    subscription_requirement: bool,
-    subscription_channel_ids: Tuple[ChatIdUnion],
-
-    throttling: bool,
-    throttling_delay: float,
-    throttling_allowed_chat_ids: Tuple[ChatIdUnion]
 ):
     middlewares = []
 
     middlewares.append(
-        LanguageMiddleware(
+        UserContextMiddleware(
             user_service=user_service
         )
     )
 
     middlewares.append(
-        BannedMiddleware(
+        UserLanguageMiddleware()
+    )
+
+    middlewares.append(
+        UserBannedMiddleware(
             responses_port=responses_router,
             moderator_service=moderator_service
         )
     )
 
-    if subscription_requirement:
+    if config.behavior.subscription_requirement.enabled:
         middlewares.append(
-            SubscriptionMiddleware(
+            UserSubscriptionMiddleware(
                 responses_port=responses_router,
-                channel_ids=subscription_channel_ids
+                channel_ids=config.behavior.subscription_requirement.channel_ids
             )
         )
 
     middlewares.append(
-        NotRegisteredMiddleware(
-            responses_port=responses_router,
-            user_service=user_service
+        UserNotRegisteredMiddleware(
+            responses_port=responses_router
         )
     )
 
-    if throttling:
+    if config.behavior.throttling.enabled:
         middlewares.append(
-            ThrottlingMiddleware(
+            UserThrottlingMiddleware(
                 responses_port=responses_router,
-                delay=throttling_delay,
-                allowed_chat_ids=throttling_allowed_chat_ids
+                delay=config.behavior.throttling.delay,
+                allowed_chat_ids=config.forwarding.moderation_chat_ids
             )
         )
 

@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from anonflow.services.transport.types import RequestContext
+from anonflow.bot.transport.types import RequestContext
 
 
 class UserResponsesPort(Protocol):

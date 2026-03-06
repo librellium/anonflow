@@ -5,16 +5,16 @@ from typing import Dict, Iterable, Optional
 from aiogram import BaseMiddleware
 from aiogram.types import ChatIdUnion, Message
 
+from anonflow.bot.transport.types import RequestContext
 from anonflow.interfaces import UserResponsesPort
-from anonflow.services.transport.types import RequestContext
 
 
-class ThrottlingMiddleware(BaseMiddleware):
+class UserThrottlingMiddleware(BaseMiddleware):
     def __init__(
         self,
         responses_port: UserResponsesPort,
         delay: float,
-        allowed_chat_ids: Optional[Iterable[ChatIdUnion]]
+        allowed_chat_ids: Optional[Iterable[ChatIdUnion]] = None
     ):
         super().__init__()
 
