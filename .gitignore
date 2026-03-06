@@ -224,6 +224,7 @@ config.yml
 # Rules
 rules/*
 !rules/.gitkeep
+!rules/*.example
 
 # Database
 anonflow.db
