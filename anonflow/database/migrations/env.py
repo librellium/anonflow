@@ -29,7 +29,7 @@ target_metadata = Base.metadata
 app_config = Config.load(paths.CONFIG_FILEPATH)
 config.set_main_option(
     "sqlalchemy.url",
-    app_config.get_migrations_url().render_as_string(hide_password=False)
+    app_config.get_migrations_url().render_as_string(hide_password=False),
 )
 
 
@@ -71,9 +71,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

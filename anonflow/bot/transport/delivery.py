@@ -7,15 +7,10 @@ from aiogram.types import (
     InputMediaPhoto,
     InputMediaVideo,
     MediaUnion,
-    ReplyMarkupUnion
+    ReplyMarkupUnion,
 )
 
-from .content import (
-    ContentGroup,
-    ContentItem,
-    ContentTextItem,
-    MediaType
-)
+from .content import ContentGroup, ContentItem, ContentTextItem, MediaType
 
 
 class DeliveryService:
@@ -23,11 +18,17 @@ class DeliveryService:
         self._bot = bot
 
     @staticmethod
-    def _wrap_content_item(item, parse_mode: Optional[Union[str, Default]] = Default("parse_mode")):
+    def _wrap_content_item(
+        item, parse_mode: Optional[Union[str, Default]] = Default("parse_mode")
+    ):
         if item.type == MediaType.PHOTO:
-            return InputMediaPhoto(media=item.file_id, caption=item.caption, parse_mode=parse_mode)
+            return InputMediaPhoto(
+                media=item.file_id, caption=item.caption, parse_mode=parse_mode
+            )
         elif item.type == MediaType.VIDEO:
-            return InputMediaVideo(media=item.file_id, caption=item.caption, parse_mode=parse_mode)
+            return InputMediaVideo(
+                media=item.file_id, caption=item.caption, parse_mode=parse_mode
+            )
         else:
             raise ValueError("Media item type is invalid.")
 
@@ -39,30 +40,24 @@ class DeliveryService:
         chat_id: ChatIdUnion,
         content: Union[ContentItem, ContentGroup],
         parse_mode: Optional[Union[str, Default]] = Default("parse_mode"),
-        reply_markup: Optional[ReplyMarkupUnion] = None
+        reply_markup: Optional[ReplyMarkupUnion] = None,
     ):
         if isinstance(content, ContentTextItem):
             await self.send_text(
-                chat_id,
-                content.text,
-                parse_mode=parse_mode,
-                reply_markup=reply_markup
+                chat_id, content.text, parse_mode=parse_mode, reply_markup=reply_markup
             )
         elif isinstance(content, ContentGroup):
             if len(content) > 1:
                 await self.send_media_group(
                     chat_id,
-                    [
-                        self._wrap_content_item(item, parse_mode)
-                        for item in content
-                    ]
+                    [self._wrap_content_item(item, parse_mode) for item in content],
                 )
             elif len(content) == 1:
                 await self.send_media(
                     chat_id,
                     self._wrap_content_item(content[0]),
                     parse_mode=parse_mode,
-                    reply_markup=reply_markup
+                    reply_markup=reply_markup,
                 )
 
     async def send_media(
@@ -70,7 +65,7 @@ class DeliveryService:
         chat_id: ChatIdUnion,
         media: MediaUnion,
         parse_mode: Optional[Union[str, Default]] = Default("parse_mode"),
-        reply_markup: Optional[ReplyMarkupUnion] = None
+        reply_markup: Optional[ReplyMarkupUnion] = None,
     ):
         if isinstance(media, InputMediaPhoto):
             return await self._bot.send_photo(
@@ -78,7 +73,7 @@ class DeliveryService:
                 media.media,
                 caption=media.caption,
                 parse_mode=parse_mode,
-                reply_markup=reply_markup
+                reply_markup=reply_markup,
             )
         elif isinstance(media, InputMediaVideo):
             return await self._bot.send_video(
@@ -86,7 +81,7 @@ class DeliveryService:
                 media.media,
                 caption=media.caption,
                 parse_mode=parse_mode,
-                reply_markup=reply_markup
+                reply_markup=reply_markup,
             )
 
     async def send_media_group(
@@ -94,21 +89,15 @@ class DeliveryService:
         chat_id: ChatIdUnion,
         media_group: List[MediaUnion],
     ):
-        return await self._bot.send_media_group(
-            chat_id=chat_id,
-            media=media_group
-        )
+        return await self._bot.send_media_group(chat_id=chat_id, media=media_group)
 
     async def send_text(
         self,
         chat_id: ChatIdUnion,
         text: str,
         parse_mode: Optional[Union[str, Default]] = Default("parse_mode"),
-        reply_markup: Optional[ReplyMarkupUnion] = None
+        reply_markup: Optional[ReplyMarkupUnion] = None,
     ):
         return await self._bot.send_message(
-            chat_id=chat_id,
-            text=text,
-            parse_mode=parse_mode,
-            reply_markup=reply_markup
+            chat_id=chat_id, text=text, parse_mode=parse_mode, reply_markup=reply_markup
         )

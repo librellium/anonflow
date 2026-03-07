@@ -12,34 +12,36 @@ class Translator:
 
     @staticmethod
     @lru_cache
-    def _get_translation(lang: str, translations_dir: Path):
+    def _get_translation(lang: str, domain: str, translations_dir: Path):
         translation = gettext.translation(
-            "messages",
-            translations_dir,
-            languages=[lang],
-            fallback=True
+            domain, translations_dir, languages=[lang], fallback=True
         )
         return translation
 
     @staticmethod
     def _format(s: str, **context):
-        return s.format_map(
-            defaultdict(
-                str,
-                context
-            )
+        return s.format_map(defaultdict(str, context))
+
+    async def get(self, lang: str = "ru", domain: str = "messages"):
+        translator = await asyncio.to_thread(
+            self._get_translation, lang, domain, self._translations_dir
         )
 
-    async def get(self, lang: str = "ru"):
-        translator = await asyncio.to_thread(self._get_translation, lang, self._translations_dir)
-
-        def _(msgid1: str, msgid2: Optional[str] = None, n: Optional[int] = None, **context):
+        def _(
+            msgid1: str,
+            msgid2: Optional[str] = None,
+            n: Optional[int] = None,
+            **context,
+        ):
             return self._format(
                 (
-                    translator.ngettext(msgid1, msgid2 if msgid2 is not None else msgid1, n)
-                    if n is not None else translator.gettext(msgid1)
+                    translator.ngettext(
+                        msgid1, msgid2 if msgid2 is not None else msgid1, n
+                    )
+                    if n is not None
+                    else translator.gettext(msgid1)
                 ),
-                **context
+                **context,
             )
 
         return _

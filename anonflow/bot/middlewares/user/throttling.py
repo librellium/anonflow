@@ -14,7 +14,7 @@ class UserThrottlingMiddleware(BaseMiddleware):
         self,
         responses_port: UserResponsesPort,
         delay: float,
-        allowed_chat_ids: Optional[Iterable[ChatIdUnion]] = None
+        allowed_chat_ids: Optional[Iterable[ChatIdUnion]] = None,
     ):
         super().__init__()
 
@@ -29,17 +29,16 @@ class UserThrottlingMiddleware(BaseMiddleware):
 
     async def __call__(self, handler, event, data):
         message = getattr(event, "message", None)
-        if (
-            isinstance(message, Message)
-            and (
-                self._allowed_chat_ids is not None
-                and message.chat.id not in self._allowed_chat_ids
-            )
+        if isinstance(message, Message) and (
+            self._allowed_chat_ids is not None
+            and message.chat.id not in self._allowed_chat_ids
         ):
             text = message.text or message.caption or ""
             if not text.startswith("/"):
                 async with self._lock:
-                    user_lock = self._user_locks.setdefault(message.chat.id, asyncio.Lock())
+                    user_lock = self._user_locks.setdefault(
+                        message.chat.id, asyncio.Lock()
+                    )
 
                 if user_lock.locked():
                     start_time = self._user_times.get(message.chat.id) or 0
@@ -49,8 +48,9 @@ class UserThrottlingMiddleware(BaseMiddleware):
                         RequestContext(message.chat.id, data["user_language"]),
                         remaining_time=(
                             round(self._delay - (current_time - start_time))
-                            if start_time else 0
-                        )
+                            if start_time
+                            else 0
+                        ),
                     )
                     return
 

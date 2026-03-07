@@ -28,7 +28,7 @@ class BehaviorSubscriptionRequirement(BaseModel):
 
 class Behavior(BaseModel):
     throttling: BehaviorThrottling = BehaviorThrottling()
-    subscription_requirement: BehaviorSubscriptionRequirement = BehaviorSubscriptionRequirement()
+    subscription_requirement: BehaviorSubscriptionRequirement = BehaviorSubscriptionRequirement()  # fmt: skip
     model_config = {"frozen": True}
 
 

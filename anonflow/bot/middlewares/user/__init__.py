@@ -11,5 +11,5 @@ __all__ = [
     "UserLanguageMiddleware",
     "UserNotRegisteredMiddleware",
     "UserSubscriptionMiddleware",
-    "UserThrottlingMiddleware"
+    "UserThrottlingMiddleware",
 ]

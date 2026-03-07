@@ -15,7 +15,7 @@ class ModeratorService:
         self,
         database: Database,
         ban_repository: BanRepository,
-        moderator_repository: ModeratorRepository
+        moderator_repository: ModeratorRepository,
     ):
         self._logger = logging.getLogger(__name__)
 
@@ -33,7 +33,9 @@ class ModeratorService:
     async def add(self, actor_user_id: int, user_id: int):
         try:
             async with self._database.begin_session() as session:
-                if await self._can(session, actor_user_id, ModeratorPermission.MANAGE_MODERATORS):
+                if await self._can(
+                    session, actor_user_id, ModeratorPermission.MANAGE_MODERATORS
+                ):
                     self._assert_not_self(actor_user_id, user_id)
                     await self._moderator_repository.add(session, user_id)
                 else:
@@ -53,7 +55,9 @@ class ModeratorService:
                     f"Moderator user_id={actor_user_id} does not have permission to perform 'ban'."
                 )
 
-    async def _can(self, session: AsyncSession, actor_user_id: int, permission: ModeratorPermission) -> bool:
+    async def _can(
+        self, session: AsyncSession, actor_user_id: int, permission: ModeratorPermission
+    ) -> bool:
         moderator = await self._moderator_repository.get(session, actor_user_id)
 
         if not moderator:
@@ -93,7 +97,9 @@ class ModeratorService:
     async def init(self):
         async with self._database.begin_session() as session:
             if not await self._moderator_repository.has(session, SYSTEM_USER_ID):
-                await self._moderator_repository.add(session, SYSTEM_USER_ID, is_root=True)
+                await self._moderator_repository.add(
+                    session, SYSTEM_USER_ID, is_root=True
+                )
 
     async def is_banned(self, user_id: int):
         async with self._database.get_session() as session:
@@ -102,7 +108,9 @@ class ModeratorService:
     async def remove(self, actor_user_id: int, user_id: int):
         try:
             async with self._database.begin_session() as session:
-                if await self._can(session, actor_user_id, ModeratorPermission.MANAGE_MODERATORS):
+                if await self._can(
+                    session, actor_user_id, ModeratorPermission.MANAGE_MODERATORS
+                ):
                     self._assert_not_self(actor_user_id, user_id)
                     await self._moderator_repository.remove(session, user_id)
                 else:
@@ -125,7 +133,9 @@ class ModeratorService:
     async def update(self, actor_user_id: int, user_id: int, **fields):
         try:
             async with self._database.begin_session() as session:
-                if await self._can(session, actor_user_id, ModeratorPermission.MANAGE_MODERATORS):
+                if await self._can(
+                    session, actor_user_id, ModeratorPermission.MANAGE_MODERATORS
+                ):
                     self._assert_not_self(actor_user_id, user_id)
                     await self._moderator_repository.update(session, user_id, **fields)
                 else:
@@ -136,19 +146,16 @@ class ModeratorService:
             self._logger.warning("Failed to update moderator user_id=%s", user_id)
 
     async def update_permissions(
-        self,
-        actor_user_id: int,
-        user_id: int,
-        permissions: ModeratorPermissions
+        self, actor_user_id: int, user_id: int, permissions: ModeratorPermissions
     ):
         try:
             async with self._database.begin_session() as session:
-                if await self._can(session, actor_user_id, ModeratorPermission.MANAGE_MODERATORS):
+                if await self._can(
+                    session, actor_user_id, ModeratorPermission.MANAGE_MODERATORS
+                ):
                     self._assert_not_self(actor_user_id, user_id)
                     await self._moderator_repository.update(
-                        session,
-                        user_id,
-                        **permissions.to_dict()
+                        session, user_id, **permissions.to_dict()
                     )
                 else:
                     raise ModeratorPermissionError(

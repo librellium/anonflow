@@ -12,11 +12,7 @@ from aiogram.types import Message
 from anonflow.config.models import ForwardingType
 from anonflow.interfaces import PostResponsesPort
 from anonflow.moderation import ModerationService
-from anonflow.bot.transport.content import (
-    ContentGroup,
-    ContentMediaItem,
-    MediaType
-)
+from anonflow.bot.transport.content import ContentGroup, ContentMediaItem, MediaType
 from anonflow.bot.transport.types import RequestContext
 
 
@@ -25,7 +21,7 @@ class MediaRouter(Router):
         self,
         responses_port: PostResponsesPort,
         moderation_service: ModerationService,
-        forwarding_types: FrozenSet[ForwardingType]
+        forwarding_types: FrozenSet[ForwardingType],
     ):
         super().__init__()
 
@@ -50,8 +46,8 @@ class MediaRouter(Router):
 
     def _can_send_media(self, msgs: List[Message]):
         return any(
-            (msg.photo and "photo" in self._forwarding_types) or
-            (msg.video and "video" in self._forwarding_types)
+            (msg.photo and "photo" in self._forwarding_types)
+            or (msg.video and "video" in self._forwarding_types)
             for msg in msgs
         )
 
@@ -76,18 +72,14 @@ class MediaRouter(Router):
 
         for message in messages:
             is_approved = await self._moderation_service.process(
-                context,
-                message.caption,
-                await self.get_b64image(message)
+                context, message.caption, await self.get_b64image(message)
             )
 
             media = self._get_media(message)
             if media:
                 content_group.append(ContentMediaItem(**media, caption=caption))
 
-        await self._responses_port.post_prepared(
-            context, content_group, is_approved
-        )
+        await self._responses_port.post_prepared(context, content_group, is_approved)
 
     async def _on_media(self, message: Message, user_language: str):
         if message.chat.type != ChatType.PRIVATE:
@@ -99,8 +91,8 @@ class MediaRouter(Router):
             with suppress(CancelledError):
                 await asyncio.sleep(2)
                 async with self._media_groups_lock:
-                    messages = self.media_groups.pop(media_group_id, []) # type: ignore
-                    self.media_groups_tasks.pop(media_group_id, None) # type: ignore
+                    messages = self.media_groups.pop(media_group_id, [])  # type: ignore
+                    self.media_groups_tasks.pop(media_group_id, None)  # type: ignore
 
                 await self._process_messages(messages, user_language)
 

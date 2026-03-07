@@ -16,8 +16,11 @@ class ModerationExecutor:
 
     def moderation_decision(self, status: Literal["approve", "reject"], reason: str):
         moderation_map = {"approve": True, "reject": False}
-        return ModerationDecisionEvent(is_approved=moderation_map.get(status.lower(), False), reason=reason)
-    moderation_decision.description = textwrap.dedent( # type: ignore
+        return ModerationDecisionEvent(
+            is_approved=moderation_map.get(status.lower(), False), reason=reason
+        )
+
+    moderation_decision.description = textwrap.dedent(  # type: ignore
         """
         Processes a message with a moderation decision by status and reason.
         This function must be called whenever there is no exact user request or no other available function
@@ -25,7 +28,9 @@ class ModerationExecutor:
         """
     ).strip()
 
-    async def process(self, text: Optional[str] = None, image: Optional[str] = None) -> AsyncGenerator[Event, None]:
+    async def process(
+        self, text: Optional[str] = None, image: Optional[str] = None
+    ) -> AsyncGenerator[Event, None]:
         yield ModerationStartedEvent()
 
         functions = await self._moderation_planner.plan(text, image)

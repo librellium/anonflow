@@ -5,10 +5,12 @@ from dataclasses import dataclass
 class Event:
     pass
 
+
 @dataclass(frozen=True)
 class ModerationDecisionEvent(Event):
     is_approved: bool
     reason: str
+
 
 @dataclass(frozen=True)
 class ModerationStartedEvent(Event):

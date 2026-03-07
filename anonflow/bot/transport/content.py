@@ -8,10 +8,12 @@ class MediaType(str, Enum):
     PHOTO = "photo"
     VIDEO = "video"
 
+
 @dataclass
 class ContentItem(ABC):
     @abstractmethod
     def translate(self, translator: Callable): ...
+
 
 @dataclass
 class ContentTextItem(ContentItem):
@@ -19,6 +21,7 @@ class ContentTextItem(ContentItem):
 
     def translate(self, translator: Callable):
         self.text = translator(self.text)
+
 
 @dataclass
 class ContentMediaItem(ContentItem):
@@ -28,6 +31,7 @@ class ContentMediaItem(ContentItem):
 
     def translate(self, translator: Callable):
         self.caption = translator(self.caption)
+
 
 class ContentGroup(list):
     def __init__(self, items: Optional[Iterable[ContentItem]] = None):

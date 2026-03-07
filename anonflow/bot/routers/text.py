@@ -16,7 +16,7 @@ class TextRouter(Router):
         self,
         responses_port: PostResponsesPort,
         moderation_service: ModerationService,
-        forwarding_types: FrozenSet[ForwardingType]
+        forwarding_types: FrozenSet[ForwardingType],
     ):
         super().__init__()
 
@@ -25,15 +25,10 @@ class TextRouter(Router):
         self._forwarding_types = forwarding_types
 
     async def _on_text(self, message: Message, user_language: str):
-        if (
-            message.chat.type == ChatType.PRIVATE
-            and "text" in self._forwarding_types
-        ):
+        if message.chat.type == ChatType.PRIVATE and "text" in self._forwarding_types:
             context = RequestContext(message.chat.id, user_language)
 
-            is_approved = await self._moderation_service.process(
-                context, message.text
-            )
+            is_approved = await self._moderation_service.process(context, message.text)
 
             await self._responses_port.post_prepared(
                 context, ContentTextItem(message.text or ""), is_approved

@@ -9,7 +9,9 @@ from anonflow.interfaces import UserResponsesPort
 
 
 class UserSubscriptionMiddleware(BaseMiddleware):
-    def __init__(self, responses_port: UserResponsesPort, channel_ids: Iterable[ChatIdUnion]):
+    def __init__(
+        self, responses_port: UserResponsesPort, channel_ids: Iterable[ChatIdUnion]
+    ):
         super().__init__()
 
         self._responses_port = responses_port
@@ -27,7 +29,9 @@ class UserSubscriptionMiddleware(BaseMiddleware):
             for channel_id in self._channel_ids:
                 member = await message.bot.get_chat_member(channel_id, user_id)
                 if member.status in (ChatMemberStatus.KICKED, ChatMemberStatus.LEFT):
-                    await self._responses_port.user_subscription_required(RequestContext(message.chat.id, data["user_language"]))
+                    await self._responses_port.user_subscription_required(
+                        RequestContext(message.chat.id, data["user_language"])
+                    )
                     return
 
         return await handler(event, data)

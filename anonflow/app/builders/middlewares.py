@@ -4,7 +4,7 @@ from anonflow.bot.middlewares.user import (
     UserLanguageMiddleware,
     UserNotRegisteredMiddleware,
     UserSubscriptionMiddleware,
-    UserThrottlingMiddleware
+    UserThrottlingMiddleware,
 )
 from anonflow.bot.transport import ResponsesRouter
 from anonflow.config import Config
@@ -19,20 +19,13 @@ def build_middlewares(
 ):
     middlewares = []
 
-    middlewares.append(
-        UserContextMiddleware(
-            user_service=user_service
-        )
-    )
+    middlewares.append(UserContextMiddleware(user_service=user_service))
 
-    middlewares.append(
-        UserLanguageMiddleware()
-    )
+    middlewares.append(UserLanguageMiddleware())
 
     middlewares.append(
         UserBannedMiddleware(
-            responses_port=responses_router,
-            moderator_service=moderator_service
+            responses_port=responses_router, moderator_service=moderator_service
         )
     )
 
@@ -40,22 +33,18 @@ def build_middlewares(
         middlewares.append(
             UserSubscriptionMiddleware(
                 responses_port=responses_router,
-                channel_ids=config.behavior.subscription_requirement.channel_ids
+                channel_ids=config.behavior.subscription_requirement.channel_ids,
             )
         )
 
-    middlewares.append(
-        UserNotRegisteredMiddleware(
-            responses_port=responses_router
-        )
-    )
+    middlewares.append(UserNotRegisteredMiddleware(responses_port=responses_router))
 
     if config.behavior.throttling.enabled:
         middlewares.append(
             UserThrottlingMiddleware(
                 responses_port=responses_router,
                 delay=config.behavior.throttling.delay,
-                allowed_chat_ids=config.forwarding.moderation_chat_ids
+                allowed_chat_ids=config.forwarding.moderation_chat_ids,
             )
         )
 

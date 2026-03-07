@@ -7,5 +7,5 @@ __all__ = [
     "ModerationExecutor",
     "ModerationPlanner",
     "RuleManager",
-    "ModerationService"
+    "ModerationService",
 ]

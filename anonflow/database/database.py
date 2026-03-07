@@ -14,12 +14,14 @@ class Database:
 
         self._engine = create_async_engine(self.url, echo=echo)
         self._session_maker = sessionmaker(
-            self._engine, expire_on_commit=False, class_=AsyncSession # type: ignore
+            self._engine,  # type: ignore
+            expire_on_commit=False,
+            class_=AsyncSession,
         )
 
     @asynccontextmanager
     async def begin_session(self) -> AsyncGenerator[AsyncSession, None]:
-        async with self._session_maker() as session: # type: ignore
+        async with self._session_maker() as session:  # type: ignore
             async with session.begin():
                 yield session
 
@@ -27,7 +29,7 @@ class Database:
         await self._engine.dispose()
 
     def get_session(self) -> AsyncSession:
-        return self._session_maker() # type: ignore
+        return self._session_maker()  # type: ignore
 
     async def init(self):
         async with self._engine.begin() as conn:

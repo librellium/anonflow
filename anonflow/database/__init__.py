@@ -9,5 +9,5 @@ __all__ = [
     "User",
     "BanRepository",
     "ModeratorRepository",
-    "UserRepository"
+    "UserRepository",
 ]

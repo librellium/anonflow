@@ -19,7 +19,9 @@ class UserNotRegisteredMiddleware(BaseMiddleware):
 
             is_user_exists = data.get("user") is not None
             if not is_user_exists and not text.startswith("/start"):
-                await self._responses_port.user_not_registered(RequestContext(message.chat.id, data["user_language"]))
+                await self._responses_port.user_not_registered(
+                    RequestContext(message.chat.id, data["user_language"])
+                )
                 return
 
         return await handler(event, data)

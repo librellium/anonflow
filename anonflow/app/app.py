@@ -6,33 +6,24 @@ from aiogram.client.bot import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from anonflow import __version_str__, paths
-from anonflow.bot.transport import (
-    DeliveryService,
-    ResponsesRouter
-)
+from anonflow.bot.transport import DeliveryService, ResponsesRouter
 from anonflow.config import Config
 from anonflow.database import (
     BanRepository,
     Database,
     ModeratorRepository,
-    UserRepository
+    UserRepository,
 )
 from anonflow.moderation import (
     ModerationExecutor,
     ModerationPlanner,
     ModerationService,
-    RuleManager
+    RuleManager,
 )
-from anonflow.services import (
-    ModeratorService,
-    UserService
-)
+from anonflow.services import ModeratorService, UserService
 from anonflow.translator import Translator
 
-from .builders import (
-    build_middlewares,
-    build_routers
-)
+from .builders import build_middlewares, build_routers
 from .helpers import require
 
 
@@ -58,7 +49,9 @@ class Application:
 
         if not config_filepath.exists():
             Config().save(config_filepath)
-            raise RuntimeError("Config file was just created. Please fill it out and restart the application.")
+            raise RuntimeError(
+                "Config file was just created. Please fill it out and restart the application."
+            )
 
         self._config = Config.load(config_filepath)
 
@@ -76,15 +69,10 @@ class Application:
             await self._database.init()
 
             self._moderator_service = ModeratorService(
-                self._database,
-                BanRepository(),
-                ModeratorRepository()
+                self._database, BanRepository(), ModeratorRepository()
             )
             await self._moderator_service.init()
-            self._user_service = UserService(
-                self._database,
-                UserRepository()
-            )
+            self._user_service = UserService(self._database, UserRepository())
 
     def _init_bot(self):
         with require(self, "_config") as config:
@@ -94,7 +82,7 @@ class Application:
 
             self._bot = Bot(
                 token=bot_token.get_secret_value(),
-                default=DefaultBotProperties(parse_mode="HTML")
+                default=DefaultBotProperties(parse_mode="HTML"),
             )
             self._dispatcher = Dispatcher(storage=MemoryStorage())
 
@@ -102,18 +90,23 @@ class Application:
         self._translator = Translator(translations_dir=paths.TRANSLATIONS_DIR)
 
     def _init_transport(self):
-        with require(
-            self, "_bot", "_config", "_translator"
-        ) as (bot, config, translator):
+        with require(self, "_bot", "_config", "_translator") as (
+            bot,
+            config,
+            translator,
+        ):
             self._responses_router = ResponsesRouter(
                 moderation_chat_ids=config.forwarding.moderation_chat_ids,
                 publication_channel_ids=config.forwarding.publication_channel_ids,
                 delivery_service=DeliveryService(bot),
-                translator=translator
+                translator=translator,
             )
 
     def _init_moderation(self):
-        with require(self, "_config", "_responses_router") as (config, responses_router):
+        with require(self, "_config", "_responses_router") as (
+            config,
+            responses_router,
+        ):
             self._rule_manager = RuleManager(rules_dir=paths.RULES_DIR)
             self._rule_manager.reload()
 
@@ -132,20 +125,32 @@ class Application:
                 base_url=str(base_url) if base_url else None,
                 proxy=str(proxy) if proxy else None,
                 timeout=config.openai.timeout,
-                max_retries=config.openai.max_retries
+                max_retries=config.openai.max_retries,
             )
             self._moderation_planner.set_enabled(config.moderation.enabled)
             self._moderation_executor = ModerationExecutor(self._moderation_planner)
 
             self._moderation_service = ModerationService(
-                responses_router,
-                self._moderation_executor
+                responses_router, self._moderation_executor
             )
 
     def _init_routers(self):
         with require(
-            self, "_dispatcher", "_config", "_responses_router", "_user_service", "_moderator_service", "_moderation_service"
-        ) as (dispatcher, config, responses_router, user_service, moderator_service, moderation_service):
+            self,
+            "_dispatcher",
+            "_config",
+            "_responses_router",
+            "_user_service",
+            "_moderator_service",
+            "_moderation_service",
+        ) as (
+            dispatcher,
+            config,
+            responses_router,
+            user_service,
+            moderator_service,
+            moderation_service,
+        ):
             dispatcher.include_router(
                 build_routers(
                     config=config,
@@ -158,13 +163,18 @@ class Application:
 
     def _init_middleware(self):
         with require(
-            self, "_dispatcher", "_config", "_responses_router", "_user_service", "_moderator_service"
+            self,
+            "_dispatcher",
+            "_config",
+            "_responses_router",
+            "_user_service",
+            "_moderator_service",
         ) as (dispatcher, config, responses_router, user_service, moderator_service):
             middlewares = build_middlewares(
                 config=config,
                 responses_router=responses_router,
                 user_service=user_service,
-                moderator_service=moderator_service
+                moderator_service=moderator_service,
             )
 
             for middleware in middlewares:
@@ -193,7 +203,9 @@ class Application:
                 await self._moderation_planner.close()
             raise
 
-        self._logger.info(f"Anonflow v{__version_str__} has been successfully initialized.")
+        self._logger.info(
+            f"Anonflow v{__version_str__} has been successfully initialized."
+        )
 
         with require(
             self, "_bot", "_dispatcher", "_database", "_moderation_planner"

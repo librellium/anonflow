@@ -13,8 +13,7 @@ class UserLanguageMiddleware(BaseMiddleware):
         if isinstance(message, Message) and message.from_user:
             user = data.get("user")
             data["user_language"] = (
-                user.language
-                if user else message.from_user.language_code
+                user.language if user else message.from_user.language_code
             )
 
         return await handler(event, data)

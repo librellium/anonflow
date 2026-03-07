@@ -14,7 +14,7 @@ from anonflow.config.models import ModerationBackend
 from .exceptions import (
     ModerationError,
     ModerationNoAvailableFunctionsError,
-    ModerationOutputParseError
+    ModerationOutputParseError,
 )
 from .rule_manager import RuleManager
 
@@ -46,7 +46,7 @@ class ModerationPlanner:
             "base_url": base_url,
             "timeout": timeout,
             "max_retries": self._max_retries,
-            "http_client": self._client
+            "http_client": self._client,
         }
 
         self._rule_manager = rule_manager
@@ -56,39 +56,34 @@ class ModerationPlanner:
 
     @staticmethod
     def _approve(reason: str):
-        return [{
-            "name": "moderation_decision",
-            "args": {
-                "status": "approve",
-                "reason": reason
+        return [
+            {
+                "name": "moderation_decision",
+                "args": {"status": "approve", "reason": reason},
             }
-        }]
+        ]
 
     @staticmethod
     def _reject(reason: str):
-        return [{
-            "name": "moderation_decision",
-            "args": {
-                "status": "reject",
-                "reason": reason
+        return [
+            {
+                "name": "moderation_decision",
+                "args": {"status": "reject", "reason": reason},
             }
-        }]
+        ]
 
     @staticmethod
     def _build_content(text: Optional[str] = None, image: Optional[str] = None):
         content = []
         if text:
-            content.append({
-                "type": "text",
-                "text": text
-            })
+            content.append({"type": "text", "text": text})
         if image:
-            content.append({
-                "type": "image_url",
-                "image_url": {
-                    "url": f"data:image/jpeg;base64,{image}"
+            content.append(
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{image}"},
                 }
-            })
+            )
 
         return content
 
@@ -98,8 +93,7 @@ class ModerationPlanner:
 
         for func in functions:
             args = ", ".join(
-                f"{arg}: {ann}"
-                for arg, ann in func.get("args", {}).items()
+                f"{arg}: {ann}" for arg, ann in func.get("args", {}).items()
             )
 
             line = f"- {func['name']}({args})"
@@ -144,7 +138,7 @@ class ModerationPlanner:
                             {
                                 "role": "system",
                                 "content": textwrap.dedent(
-                                    f'''
+                                    f"""
                                     Respond strictly with a JSON array in the following format:
                                     `[{{"name": ..., "args": {{...}}}}, ...]`
                                     `name` - the function name, `args` - dict of arguments.
@@ -160,14 +154,11 @@ class ModerationPlanner:
 
                                     **RULES:**
                                     {rules_prompt}
-                                    '''
+                                    """
                                 ).strip(),
                             },
-                            {
-                                "role": "user",
-                                "content": text
-                            }
-                        ]
+                            {"role": "user", "content": text},
+                        ],
                     )
                 except OpenAIError as e:
                     raise ModerationError() from e
@@ -175,7 +166,9 @@ class ModerationPlanner:
                 try:
                     output = json.loads(response.output_text)
 
-                    if not isinstance(output, list) or not all(isinstance(obj, dict) for obj in output):
+                    if not isinstance(output, list) or not all(
+                        isinstance(obj, dict) for obj in output
+                    ):
                         raise ModerationOutputParseError()
 
                     break
@@ -224,7 +217,8 @@ class ModerationPlanner:
             args = {
                 name: (
                     getattr(param.annotation, "__name__", str(param.annotation))
-                    if param.annotation != inspect._empty else "str"
+                    if param.annotation != inspect._empty
+                    else "str"
                 )
                 for name, param in sig.parameters.items()
             }
@@ -233,7 +227,7 @@ class ModerationPlanner:
                 {
                     "name": function.__name__,
                     "args": args,
-                    "description": function.description or ""
+                    "description": function.description or "",
                 }
             )
 
@@ -251,7 +245,9 @@ class ModerationPlanner:
     def get_function_names(self) -> List[str]:
         return [f["name"] for f in self._functions if "name" in f]
 
-    async def plan(self, text: Optional[str] = None, image: Optional[str] = None) -> List[Dict[str, Any]]:
+    async def plan(
+        self, text: Optional[str] = None, image: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         if not self._enabled:
             return self._approve("Moderation is disabled.")
 

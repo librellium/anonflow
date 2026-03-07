@@ -17,14 +17,11 @@ def build_routers(
     main_router = Router()
 
     routers = [
-        StartRouter(
-            responses_port=responses_router,
-            user_service=user_service
-        ),
+        StartRouter(responses_port=responses_router, user_service=user_service),
         TextRouter(
             responses_port=responses_router,
             moderation_service=moderation_service,
-            forwarding_types=config.forwarding.types
+            forwarding_types=config.forwarding.types,
         ),
         MediaRouter(
             responses_port=responses_router,

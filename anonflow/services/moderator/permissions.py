@@ -11,6 +11,7 @@ class ModeratorPermissions:
     def to_dict(self):
         return asdict(self)
 
+
 class ModeratorPermission(str, Enum):
     APPROVE_POSTS = "can_approve_posts"
     MANAGE_BANS = "can_manage_bans"

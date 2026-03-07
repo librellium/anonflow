@@ -1,12 +1,4 @@
-from sqlalchemy import (
-    Boolean,
-    Column,
-    DateTime,
-    ForeignKey,
-    Integer,
-    String,
-    func
-)
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import relationship
 
 from .base import Base
@@ -20,24 +12,25 @@ class Ban(Base):
         Integer,
         ForeignKey("users.user_id", ondelete="CASCADE"),
         index=True,
-        nullable=False
+        nullable=False,
     )
     is_active = Column(Boolean, nullable=False, default=True)
 
     banned_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
-        nullable=False
+        nullable=False,
     )
     unbanned_at = Column(
         DateTime(timezone=True),
-        nullable=True
+        nullable=True,
     )
 
     banned_by = Column(Integer, ForeignKey("moderators.user_id"))
     unbanned_by = Column(Integer, ForeignKey("moderators.user_id"))
 
     user = relationship("User", back_populates="bans")
+
 
 class Moderator(Base):
     __tablename__ = "moderators"
@@ -52,6 +45,7 @@ class Moderator(Base):
 
     user = relationship("User", back_populates="moderator")
 
+
 class User(Base):
     __tablename__ = "users"
 
@@ -62,11 +56,11 @@ class User(Base):
         "Moderator",
         uselist=False,
         back_populates="user",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
     bans = relationship(
         "Ban",
         back_populates="user",
         cascade="all, delete-orphan",
-        order_by="Ban.banned_at.desc()"
+        order_by="Ban.banned_at.desc()",
     )

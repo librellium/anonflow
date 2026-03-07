@@ -6,15 +6,7 @@ from dotenv import dotenv_values
 from pydantic import BaseModel, SecretStr
 from sqlalchemy.engine import URL
 
-from .models import (
-    Behavior,
-    Bot,
-    Database,
-    Forwarding,
-    Logging,
-    Moderation,
-    OpenAI
-)
+from .models import Behavior, Bot, Database, Forwarding, Logging, Moderation, OpenAI
 
 
 class Config(BaseModel):
@@ -73,7 +65,7 @@ class Config(BaseModel):
                 template = Template(f.read())
                 rendered = template.safe_substitute(dotenv_values())
                 data = yaml.safe_load(rendered) or {}
-            return cls(**data) # type: ignore
+            return cls(**data)  # type: ignore
 
         return cls()
 
@@ -97,5 +89,5 @@ class Config(BaseModel):
                 config_file,
                 width=float("inf"),
                 sort_keys=False,
-                default_flow_style=False
+                default_flow_style=False,
             )

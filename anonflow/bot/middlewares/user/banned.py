@@ -7,7 +7,9 @@ from anonflow.services import ModeratorService
 
 
 class UserBannedMiddleware(BaseMiddleware):
-    def __init__(self, responses_port: UserResponsesPort, moderator_service: ModeratorService):
+    def __init__(
+        self, responses_port: UserResponsesPort, moderator_service: ModeratorService
+    ):
         super().__init__()
 
         self._responses_port = responses_port
@@ -17,7 +19,9 @@ class UserBannedMiddleware(BaseMiddleware):
         message = getattr(event, "message", None)
         if isinstance(message, Message):
             if await self._moderator_service.is_banned(message.chat.id):
-                await self._responses_port.user_banned(RequestContext(message.chat.id, data["user_language"]))
+                await self._responses_port.user_banned(
+                    RequestContext(message.chat.id, data["user_language"])
+                )
                 return
 
         return await handler(event, data)
