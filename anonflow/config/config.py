@@ -3,21 +3,19 @@ from string import Template
 
 import yaml
 from dotenv import dotenv_values
-from pydantic import BaseModel, SecretStr
+from pydantic import BaseModel, Field, SecretStr
 from sqlalchemy.engine import URL
 
-from .models import Behavior, Bot, Database, Forwarding, Logging, Moderation, OpenAI
+from .models import App, Bot, Database, Logging, Moderation, OpenAI
 
 
 class Config(BaseModel):
-    bot: Bot = Bot()
-    behavior: Behavior = Behavior()
-    database: Database = Database()
-    forwarding: Forwarding = Forwarding()
-    openai: OpenAI = OpenAI()
-    moderation: Moderation = Moderation()
-    logging: Logging = Logging()
-    model_config = {"frozen": True}
+    app: App = Field(default_factory=App)
+    bot: Bot = Field(default_factory=Bot)
+    database: Database = Field(default_factory=Database)
+    openai: OpenAI = Field(default_factory=OpenAI)
+    moderation: Moderation = Field(default_factory=Moderation)
+    logging: Logging = Field(default_factory=Logging)
 
     def get_database_url(self):
         password = None
