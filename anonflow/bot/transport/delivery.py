@@ -1,7 +1,8 @@
-from typing import Optional, List, Union
+import asyncio
+from typing import Callable, Optional, List, Union
 
 from aiogram import Bot
-from aiogram.client.bot import Default
+from aiogram.client.default import Default
 from aiogram.types import (
     ChatIdUnion,
     InputMediaPhoto,
@@ -32,8 +33,25 @@ class DeliveryService:
         else:
             raise ValueError("Media item type is invalid.")
 
+    async def answer_callback_query(self, callback_query_id: str, text: str):
+        return await self._bot.answer_callback_query(callback_query_id, text)
+
+    async def copy(
+        self, chat_id: ChatIdUnion, from_chat_id: ChatIdUnion, message_id: int
+    ):
+        return await self._bot.copy_message(chat_id, from_chat_id, message_id)
+
     async def delete(self, chat_id: ChatIdUnion, message_id: int):
         return await self._bot.delete_message(chat_id, message_id)
+
+    async def delete_with_delay(self, chat_id: ChatIdUnion, message_id: int, delay: float):
+        await asyncio.sleep(delay)
+        return await self.delete(chat_id, message_id)
+
+    async def remove_reply_markup(self, chat_id: ChatIdUnion, message_id: int):
+        return await self._bot.edit_message_reply_markup(
+            chat_id=chat_id, message_id=message_id
+        )
 
     async def send_content(
         self,
@@ -101,3 +119,16 @@ class DeliveryService:
         return await self._bot.send_message(
             chat_id=chat_id, text=text, parse_mode=parse_mode, reply_markup=reply_markup
         )
+
+    async def send_with_delete(
+        self,
+        delay: float,
+        func: Callable,
+        *args,
+        **kwargs
+    ):
+        message = await func(*args, **kwargs)
+        asyncio.create_task(
+            self.delete_with_delay(message.chat.id, message.message_id, delay)
+        )
+        return message
