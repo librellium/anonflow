@@ -1,6 +1,6 @@
 from aiogram import Router
 
-from anonflow.bot.routers import MediaRouter, StartRouter, TextRouter
+from anonflow.bot.routers import MediaRouter, PostRouter, StartRouter, TextRouter
 from anonflow.bot.transport import ResponsesRouter
 from anonflow.config import Config
 from anonflow.moderation import ModerationService
@@ -17,17 +17,25 @@ def build_routers(
     main_router = Router()
 
     routers = [
-        StartRouter(responses_port=responses_router, user_service=user_service),
+        StartRouter(
+            responses_port=responses_router,
+            user_service=user_service
+        ),
         TextRouter(
             responses_port=responses_router,
             moderation_service=moderation_service,
-            forwarding_types=config.forwarding.types,
+            forwarding_types=config.bot.forwarding.types,
         ),
         MediaRouter(
             responses_port=responses_router,
             moderation_service=moderation_service,
-            forwarding_types=config.forwarding.types,
+            forwarding_types=config.bot.forwarding.types,
         ),
+        PostRouter(
+            post_responses_port=responses_router,
+            moderator_responses_port=responses_router,
+            moderator_service=moderator_service
+        )
     ]
 
     for router in routers:
