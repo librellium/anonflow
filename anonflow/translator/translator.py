@@ -7,14 +7,15 @@ from typing import Optional
 
 
 class Translator:
-    def __init__(self, translations_dir: Path):
+    def __init__(self, translations_dir: Path, default_language: str):
         self._translations_dir = translations_dir
+        self._default_language = default_language
 
     @staticmethod
     @lru_cache
-    def _get_translation(lang: str, domain: str, translations_dir: Path):
+    def _get_translation(language: str, domain: str, translations_dir: Path):
         translation = gettext.translation(
-            domain, translations_dir, languages=[lang], fallback=True
+            domain, translations_dir, languages=[language], fallback=True
         )
         return translation
 
@@ -22,9 +23,12 @@ class Translator:
     def _format(s: str, **context):
         return s.format_map(defaultdict(str, context))
 
-    async def get(self, lang: str = "ru", domain: str = "messages"):
+    async def get(self, language: Optional[str] = None, domain: str = "messages"):
         translator = await asyncio.to_thread(
-            self._get_translation, lang, domain, self._translations_dir
+            self._get_translation,
+            language or self._default_language,
+            domain,
+            self._translations_dir
         )
 
         def _(
