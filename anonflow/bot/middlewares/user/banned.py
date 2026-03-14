@@ -5,6 +5,8 @@ from anonflow.bot.transport.types import RequestContext
 from anonflow.interfaces import UserResponsesPort
 from anonflow.services import ModeratorService
 
+from .utils import extract_message, extract_user
+
 
 class UserBannedMiddleware(BaseMiddleware):
     def __init__(
@@ -16,9 +18,10 @@ class UserBannedMiddleware(BaseMiddleware):
         self._moderator_service = moderator_service
 
     async def __call__(self, handler, event, data):
-        message = getattr(event, "message", None)
-        if isinstance(message, Message):
-            if await self._moderator_service.is_banned(message.chat.id):
+        message = extract_message(event)
+        from_user = extract_user(event)
+        if isinstance(message, Message) and from_user:
+            if await self._moderator_service.is_banned(from_user.id):
                 await self._responses_port.user_banned(
                     RequestContext(message.chat.id, data["user_language"])
                 )

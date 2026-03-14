@@ -2,9 +2,9 @@ from aiogram import Router
 from aiogram.filters import CommandStart
 from aiogram.types import Message
 
-from anonflow.services import UserService
-from anonflow.interfaces import UserResponsesPort
 from anonflow.bot.transport.types import RequestContext
+from anonflow.interfaces import UserResponsesPort
+from anonflow.services import UserService
 
 
 class StartRouter(Router):

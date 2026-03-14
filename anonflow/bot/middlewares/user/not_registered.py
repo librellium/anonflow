@@ -5,6 +5,8 @@ from aiogram.types import Message
 from anonflow.bot.transport.types import RequestContext
 from anonflow.interfaces import UserResponsesPort
 
+from .utils import extract_message
+
 
 class UserNotRegisteredMiddleware(BaseMiddleware):
     def __init__(self, responses_port: UserResponsesPort):
@@ -13,7 +15,7 @@ class UserNotRegisteredMiddleware(BaseMiddleware):
         self._responses_port = responses_port
 
     async def __call__(self, handler, event, data):
-        message = getattr(event, "message", None)
+        message = extract_message(event)
         if isinstance(message, Message) and message.chat.type == ChatType.PRIVATE:
             text = message.text or message.caption or ""
 

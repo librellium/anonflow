@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 from aiogram import Bot, Dispatcher
-from aiogram.client.bot import DefaultBotProperties
+from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from anonflow import __version_str__, paths
@@ -87,7 +87,11 @@ class Application:
             self._dispatcher = Dispatcher(storage=MemoryStorage())
 
     def _init_translator(self):
-        self._translator = Translator(translations_dir=paths.TRANSLATIONS_DIR)
+        with require(self, "_config") as config:
+            self._translator = Translator(
+                translations_dir=paths.TRANSLATIONS_DIR,
+                default_language=config.app.language
+            )
 
     def _init_transport(self):
         with require(self, "_bot", "_config", "_translator") as (
@@ -96,8 +100,8 @@ class Application:
             translator,
         ):
             self._responses_router = ResponsesRouter(
-                moderation_chat_ids=config.forwarding.moderation_chat_ids,
-                publication_channel_ids=config.forwarding.publication_channel_ids,
+                moderation_chat_id=config.bot.forwarding.moderation_chat_id,
+                publication_channel_ids=config.bot.forwarding.publication_channel_ids,
                 delivery_service=DeliveryService(bot),
                 translator=translator,
             )
@@ -169,9 +173,16 @@ class Application:
             "_responses_router",
             "_user_service",
             "_moderator_service",
-        ) as (dispatcher, config, responses_router, user_service, moderator_service):
+        ) as (
+            dispatcher,
+            config,
+            responses_router,
+            user_service,
+            moderator_service
+        ):
             middlewares = build_middlewares(
                 config=config,
+                dispatcher=dispatcher,
                 responses_router=responses_router,
                 user_service=user_service,
                 moderator_service=moderator_service,

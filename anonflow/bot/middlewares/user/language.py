@@ -1,19 +1,22 @@
 from aiogram import BaseMiddleware
-from aiogram.types import Message
+
+from .utils import extract_user
 
 
 class UserLanguageMiddleware(BaseMiddleware):
-    def __init__(self):
+    def __init__(self, fallback_language: str):
         super().__init__()
 
-    async def __call__(self, handler, event, data):
-        data["user_language"] = None
+        self._fallback_language = fallback_language
 
-        message = getattr(event, "message", None)
-        if isinstance(message, Message) and message.from_user:
+    async def __call__(self, handler, event, data):
+        data["user_language"] = self._fallback_language
+
+        from_user = extract_user(event)
+        if from_user:
             user = data.get("user")
             data["user_language"] = (
-                user.language if user else message.from_user.language_code
+                user.language if user else from_user.language_code
             )
 
         return await handler(event, data)

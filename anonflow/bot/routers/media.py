@@ -3,17 +3,21 @@ import base64
 from asyncio import CancelledError
 from contextlib import suppress
 from io import BytesIO
-from typing import Dict, FrozenSet, List
+from typing import Dict, List, Set
 
 from aiogram import F, Router
 from aiogram.enums import ChatType
 from aiogram.types import Message
 
+from anonflow.bot.transport.content import (
+    ContentGroup,
+    ContentMediaItem,
+    MediaType
+)
+from anonflow.bot.transport.types import RequestContext
 from anonflow.config.models import ForwardingType
 from anonflow.interfaces import PostResponsesPort
 from anonflow.moderation import ModerationService
-from anonflow.bot.transport.content import ContentGroup, ContentMediaItem, MediaType
-from anonflow.bot.transport.types import RequestContext
 
 
 class MediaRouter(Router):
@@ -21,7 +25,7 @@ class MediaRouter(Router):
         self,
         responses_port: PostResponsesPort,
         moderation_service: ModerationService,
-        forwarding_types: FrozenSet[ForwardingType],
+        forwarding_types: Set[ForwardingType],
     ):
         super().__init__()
 
@@ -57,7 +61,7 @@ class MediaRouter(Router):
         elif message.video and "video" in self._forwarding_types:
             return {"type": MediaType.VIDEO, "file_id": message.video.file_id}
 
-    async def _process_messages(self, messages: List[Message], user_language: str):
+    async def _process(self, messages: List[Message], user_language: str):
         if not messages:
             return
 
@@ -94,7 +98,7 @@ class MediaRouter(Router):
                     messages = self.media_groups.pop(media_group_id, [])  # type: ignore
                     self.media_groups_tasks.pop(media_group_id, None)  # type: ignore
 
-                await self._process_messages(messages, user_language)
+                asyncio.create_task(self._process(messages, user_language))
 
         if media_group_id:
             async with self._media_groups_lock:
@@ -109,7 +113,7 @@ class MediaRouter(Router):
                 )
             return
 
-        await self._process_messages([message], user_language)
+        asyncio.create_task(self._process([message], user_language))
 
     def setup(self):
         self.message.register(self._on_media, F.photo | F.video)

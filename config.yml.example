@@ -1,3 +1,12 @@
+app:
+  # Primary bot language.
+  # Used by the bot in moderation chats by default.
+  language: ru
+
+  # Language used when a user is not found in the database
+  # and their preferred language cannot be determined.
+  fallback_language: ru
+
 bot:
   # Telegram bot token, passed via environment variable BOT_TOKEN.
   # Used by aiogram to connect to the Telegram Bot API.
@@ -8,23 +17,40 @@ bot:
   # only defines how long a single HTTP request may take before timing out.
   timeout: 15
 
-behavior:
-  throttling:
-    # Enable/disable throttling for user-submitted posts.
-    # When enabled, each user must wait `delay` seconds between submissions.
-    enabled: true
+  behavior:
+    throttling:
+      # Enable/disable throttling for user-submitted posts.
+      # When enabled, each user must wait `delay` seconds between submissions.
+      enabled: true
 
-    # Minimal delay (in seconds) between two post submissions from the same user.
-    # The delay is measured between the moments when the user's requests are processed by the bot.
-    delay: 120
+      # Minimal delay (in seconds) between two post submissions from the same user.
+      # The delay is measured between the moments when the user's requests are processed by the bot.
+      delay: 120
 
-  subscription_requirement:
-    # Require users to be subscribed to specific Telegram channels before they can use the bot.
-    # If enabled, the bot checks subscription status for each user action.
-    enabled: false
+    subscription_requirement:
+      # Require users to be subscribed to specific Telegram channels before they can use the bot.
+      # If enabled, the bot checks subscription status for each user action.
+      enabled: false
 
-    # List of Telegram chat_ids (channels) that the user must be subscribed to.
-    channel_ids: []
+      # List of Telegram chat_ids (channels) that the user must be subscribed to.
+      channel_ids: []
+
+  forwarding:
+    # Telegram chat_id where decisions of the moderation module are sent.
+    # Typically this is a chat for moderators that receive moderation results.
+    moderation_chat_id: null
+
+    # Telegram chat_ids where approved posts are published.
+    # Once approved, messages are forwarded to all configured publication channels.
+    publication_channel_ids: []
+
+    # List of Telegram message types that are handled and can be forwarded
+    # by the bot: text messages, photos, videos, etc.
+    # Types correspond to Telegram message content types.
+    types:
+      - text
+      - photo
+      - video
 
 database:
   # SQLAlchemy database backend/driver.
@@ -57,31 +83,6 @@ database:
     # Migrations backend. Project uses Alembic for schema migrations.
     # Alembic is configured to work with the same SQLAlchemy URL.
     backend: ${DB_MIGRATIONS_BACKEND}
-
-  repositories:
-    user:
-      # Maximum number of user records cached in memory.
-      cache_size: 1024
-
-      # Time-to-live for cached user objects (in seconds).
-      cache_ttl: 60
-
-forwarding:
-  # Telegram chat_ids where decisions of the moderation module are sent.
-  # Typically these are chats for moderators that receive moderation results.
-  moderation_chat_ids: []
-
-  # Telegram chat_ids where approved posts are published.
-  # Once approved, messages are forwarded to all configured publication channels.
-  publication_channel_ids: []
-
-  # List of Telegram message types that are handled and can be forwarded
-  # by the bot: text messages, photos, videos, etc.
-  # Types correspond to Telegram message content types.
-  types:
-    - text
-    - photo
-    - video
 
 openai:
   # OpenAI API key used by the client.
