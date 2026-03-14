@@ -17,7 +17,7 @@ class UserService:
             async with self._database.begin_session() as session:
                 await self._user_repository.add(session, user_id)
         except IntegrityError:
-            self._logger.warning("Failed to add user user_id=%s", user_id)
+            self._logger.warning("Failed to add user, possibly already exists")
 
     async def get(self, user_id: int):
         async with self._database.get_session() as session:
@@ -32,11 +32,11 @@ class UserService:
             async with self._database.begin_session() as session:
                 await self._user_repository.remove(session, user_id)
         except IntegrityError:
-            self._logger.warning("Failed to remove user user_id=%s", user_id)
+            self._logger.exception("Failed to remove user")
 
     async def update(self, user_id: int, **fields):
         try:
             async with self._database.begin_session() as session:
                 await self._user_repository.update(session, user_id, **fields)
         except IntegrityError:
-            self._logger.warning("Failed to update user user_id=%s", user_id)
+            self._logger.exception("Failed to update user")

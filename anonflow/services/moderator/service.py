@@ -27,7 +27,7 @@ class ModeratorService:
     def _assert_not_self(actor_user_id: int, user_id: int):
         if actor_user_id == user_id:
             raise SelfActionError(
-                f"Moderator user_id={actor_user_id} cannot perform this action on themselves. Target user_id={user_id}."
+                f"Moderator user_id={actor_user_id} cannot perform this action on themselves, target user_id={user_id}"
             )
 
     async def add(self, actor_user_id: int, user_id: int):
@@ -40,10 +40,10 @@ class ModeratorService:
                     await self._moderator_repository.add(session, user_id)
                 else:
                     raise ModeratorPermissionError(
-                        f"Moderator user_id={actor_user_id} does not have permission to perform 'add'."
+                        f"Moderator user_id={actor_user_id} does not have permission to perform 'add'"
                     )
         except IntegrityError:
-            self._logger.warning("Failed to add moderator user_id=%s", user_id)
+            self._logger.warning("Failed to add moderator user_id=%s by moderator user_id=%s", user_id, actor_user_id)
 
     async def ban(self, actor_user_id: int, user_id: int):
         async with self._database.begin_session() as session:
@@ -52,7 +52,7 @@ class ModeratorService:
                 await self._ban_repository.ban(session, actor_user_id, user_id)
             else:
                 raise ModeratorPermissionError(
-                    f"Moderator user_id={actor_user_id} does not have permission to perform 'ban'."
+                    f"Moderator user_id={actor_user_id} does not have permission to perform 'ban'"
                 )
 
     async def _can(
@@ -70,7 +70,7 @@ class ModeratorService:
 
     async def can(self, actor_user_id: int, permission: ModeratorPermission):
         async with self._database.get_session() as session:
-            return self._can(session, actor_user_id, permission)
+            return await self._can(session, actor_user_id, permission)
 
     async def get(self, user_id: int):
         async with self._database.get_session() as session:
@@ -115,10 +115,10 @@ class ModeratorService:
                     await self._moderator_repository.remove(session, user_id)
                 else:
                     raise ModeratorPermissionError(
-                        f"Moderator user_id={actor_user_id} does not have permission to perform 'remove'."
+                        f"Moderator user_id={actor_user_id} does not have permission to perform 'remove'"
                     )
         except IntegrityError:
-            self._logger.warning("Failed to remove moderator user_id=%s", user_id)
+            self._logger.warning("Failed to remove moderator user_id=%s by moderator user_id=%s", user_id, actor_user_id)
 
     async def unban(self, actor_user_id: int, user_id: int):
         async with self._database.begin_session() as session:
@@ -127,7 +127,7 @@ class ModeratorService:
                 await self._ban_repository.unban(session, actor_user_id, user_id)
             else:
                 raise ModeratorPermissionError(
-                    f"Moderator user_id={actor_user_id} does not have permission to perform 'unban'."
+                    f"Moderator user_id={actor_user_id} does not have permission to perform 'unban'"
                 )
 
     async def update(self, actor_user_id: int, user_id: int, **fields):
@@ -140,10 +140,10 @@ class ModeratorService:
                     await self._moderator_repository.update(session, user_id, **fields)
                 else:
                     raise ModeratorPermissionError(
-                        f"Moderator user_id={actor_user_id} does not have permission to perform 'update'."
+                        f"Moderator user_id={actor_user_id} does not have permission to perform 'update'"
                     )
         except IntegrityError:
-            self._logger.warning("Failed to update moderator user_id=%s", user_id)
+            self._logger.exception("Failed to update moderator user_id=%s by moderator user_id=%s", user_id, actor_user_id)
 
     async def update_permissions(
         self, actor_user_id: int, user_id: int, permissions: ModeratorPermissions
@@ -159,7 +159,7 @@ class ModeratorService:
                     )
                 else:
                     raise ModeratorPermissionError(
-                        f"Moderator user_id={actor_user_id} does not have permission to perform 'update_permissions'."
+                        f"Moderator user_id={actor_user_id} does not have permission to perform 'update_permissions'"
                     )
         except IntegrityError:
-            self._logger.warning("Failed to update moderator user_id=%s", user_id)
+            self._logger.exception("Failed to update moderator user_id=%s by moderator user_id=%s", user_id, actor_user_id)
