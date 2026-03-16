@@ -25,7 +25,7 @@ class ModeratorService:
 
     @staticmethod
     def _assert_not_self(actor_user_id: int, user_id: int):
-        if actor_user_id == user_id:
+        if int(actor_user_id) == int(user_id):
             raise SelfActionError(
                 f"Moderator user_id={actor_user_id} cannot perform this action on themselves, target user_id={user_id}"
             )
