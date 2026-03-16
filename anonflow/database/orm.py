@@ -45,6 +45,23 @@ class Moderator(Base):
 
     user = relationship("User", back_populates="moderator")
 
+    def __str__(self):
+        permissions = []
+        if bool(self.is_root):
+            permissions.append("root")
+        else:
+            for permission in dir(self):
+                if (
+                    permission.startswith("can_")
+                    and getattr(self, permission, False)
+                ):
+                    permissions.append(permission)
+
+        return (
+            f"Moderator user_id={self.user_id} "
+            f"permissions={','.join(permissions)}"
+        )
+
 
 class User(Base):
     __tablename__ = "users"
